@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StarRating } from "@/components/star-rating";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -47,6 +48,8 @@ interface Course {
   accessRule: "open" | "invitation" | "payment";
   price: string | null;
   viewsCount: number;
+  averageRating: number;
+  totalReviews: number;
   createdAt: string;
   tags: CourseTag[];
 }
@@ -205,6 +208,7 @@ export default function BrowseCoursesPage() {
                   <SelectItem value="newest">Newest First</SelectItem>
                   <SelectItem value="oldest">Oldest First</SelectItem>
                   <SelectItem value="popular">Most Popular</SelectItem>
+                  <SelectItem value="rating">Top Rated</SelectItem>
                   <SelectItem value="title">Title A-Z</SelectItem>
                 </SelectContent>
               </Select>
@@ -394,6 +398,20 @@ export default function BrowseCoursesPage() {
                           +{course.tags.length - 3}
                         </Badge>
                       )}
+                    </div>
+                  )}
+
+                  {/* Rating */}
+                  {course.totalReviews > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <StarRating
+                        rating={course.averageRating}
+                        size="sm"
+                        showValue
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        ({course.totalReviews})
+                      </span>
                     </div>
                   )}
 

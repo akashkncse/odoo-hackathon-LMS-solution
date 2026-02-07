@@ -1,7 +1,13 @@
 import { db } from "@/lib/db";
-import { courses, lessons, enrollments, lessonProgress } from "@/lib/db/schema";
+import {
+  courses,
+  lessons,
+  enrollments,
+  lessonProgress,
+  reviews,
+} from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -146,8 +152,21 @@ export async function GET(
       }
     }
 
+    // Fetch average rating and review count
+    const [reviewStats] = await db
+      .select({
+        averageRating: sql<number>`coalesce(round(avg(${reviews.rating})::numeric, 1), 0)::float`,
+        totalReviews: sql<number>`count(*)::int`,
+      })
+      .from(reviews)
+      .where(eq(reviews.courseId, id));
+
     return NextResponse.json({
-      course,
+      course: {
+        ...course,
+        averageRating: Number(reviewStats?.averageRating ?? 0),
+        totalReviews: Number(reviewStats?.totalReviews ?? 0),
+      },
       lessons: courseLessons,
       enrollment,
       progress,

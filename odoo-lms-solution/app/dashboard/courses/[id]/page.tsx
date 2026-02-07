@@ -21,9 +21,11 @@ import {
   CheckCircle2,
   ArrowLeft,
   Trophy,
+  Star,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import ReviewsSection from "@/components/reviews-section";
 
 interface Course {
   id: string;
@@ -35,6 +37,8 @@ interface Course {
   price: string | null;
   published: boolean;
   viewsCount: number;
+  averageRating: number;
+  totalReviews: number;
   createdAt: string;
 }
 
@@ -195,6 +199,8 @@ export default function CourseDetailPage({
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState("");
   const viewTracked = useRef(false);
+  // Dashboard routes are behind auth middleware, so user is always logged in here
+  const isLoggedIn = true;
 
   // Track view count exactly once per page visit
   useEffect(() => {
@@ -340,6 +346,20 @@ export default function CourseDetailPage({
                 {lessons.length} {lessons.length === 1 ? "lesson" : "lessons"}
               </span>
             </div>
+            {course.totalReviews > 0 && (
+              <div className="flex items-center gap-1">
+                <Star
+                  className="size-3.5 text-amber-400"
+                  fill="currentColor"
+                  strokeWidth={0}
+                />
+                <span>{course.averageRating.toFixed(1)}</span>
+                <span className="text-white/60">
+                  ({course.totalReviews} review
+                  {course.totalReviews !== 1 ? "s" : ""})
+                </span>
+              </div>
+            )}
             {course.accessRule === "payment" && course.price && (
               <span className="font-semibold text-white">
                 ${parseFloat(course.price).toFixed(2)}
@@ -386,7 +406,7 @@ export default function CourseDetailPage({
           </Button>
 
           <div className="grid gap-6 lg:grid-cols-3">
-            {/* Left column — Course info + lessons */}
+            {/* Left column — Course info + lessons + reviews */}
             <div className="space-y-6 lg:col-span-2">
               {/* Description */}
               {course.description && (
@@ -521,6 +541,12 @@ export default function CourseDetailPage({
                   )}
                 </CardContent>
               </Card>
+              {/* Reviews section */}
+              <ReviewsSection
+                courseId={id}
+                isEnrolled={isEnrolled}
+                isLoggedIn={isLoggedIn}
+              />
             </div>
 
             {/* Right column — Enroll / Progress card */}

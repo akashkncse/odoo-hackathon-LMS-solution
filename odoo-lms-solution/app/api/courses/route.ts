@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { courses, tags, courseTags } from "@/lib/db/schema";
+import { courses, tags, courseTags, reviews } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { eq, and, ilike, sql, desc, asc, inArray } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -88,6 +88,14 @@ export async function GET(request: NextRequest) {
       case "title":
         orderBy = asc(courses.title);
         break;
+      case "rating":
+        // Sort by average rating descending; courses with no reviews go last
+        orderBy = sql`(
+          SELECT coalesce(avg(${reviews.rating}), 0)
+          FROM ${reviews}
+          WHERE ${reviews.courseId} = ${courses.id}
+        ) DESC`;
+        break;
       case "newest":
       default:
         orderBy = desc(courses.createdAt);
@@ -147,10 +155,37 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Attach tags to each course
+    // Fetch average rating and review count for all returned courses in one query
+    const reviewStatsMap: Record<
+      string,
+      { averageRating: number; totalReviews: number }
+    > = {};
+
+    if (courseIds.length > 0) {
+      const reviewStatsRows = await db
+        .select({
+          courseId: reviews.courseId,
+          averageRating: sql<number>`coalesce(round(avg(${reviews.rating})::numeric, 1), 0)::float`,
+          totalReviews: sql<number>`count(*)::int`,
+        })
+        .from(reviews)
+        .where(inArray(reviews.courseId, courseIds))
+        .groupBy(reviews.courseId);
+
+      for (const row of reviewStatsRows) {
+        reviewStatsMap[row.courseId] = {
+          averageRating: Number(row.averageRating),
+          totalReviews: Number(row.totalReviews),
+        };
+      }
+    }
+
+    // Attach tags and review stats to each course
     const coursesWithTags = courseRows.map((course) => ({
       ...course,
       tags: courseTagsMap[course.id] || [],
+      averageRating: reviewStatsMap[course.id]?.averageRating ?? 0,
+      totalReviews: reviewStatsMap[course.id]?.totalReviews ?? 0,
     }));
 
     // Fetch all available tags for the filter UI
