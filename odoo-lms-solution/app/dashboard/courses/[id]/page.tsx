@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useRef, useState, use } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -140,6 +140,14 @@ export default function CourseDetailPage({
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState("");
   const [enrollError, setEnrollError] = useState("");
+  const viewTracked = useRef(false);
+
+  // Track view count exactly once per page visit
+  useEffect(() => {
+    if (viewTracked.current) return;
+    viewTracked.current = true;
+    fetch(`/api/courses/${id}/view`, { method: "POST" }).catch(() => {});
+  }, [id]);
 
   useEffect(() => {
     async function fetchCourse() {

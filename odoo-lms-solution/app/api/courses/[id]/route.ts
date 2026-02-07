@@ -46,12 +46,6 @@ export async function GET(
       );
     }
 
-    // Increment view count
-    await db
-      .update(courses)
-      .set({ viewsCount: course.viewsCount + 1 })
-      .where(eq(courses.id, id));
-
     // Fetch lessons for this course (metadata only, not content)
     const courseLessons = await db
       .select({
@@ -89,10 +83,7 @@ export async function GET(
     }
 
     return NextResponse.json({
-      course: {
-        ...course,
-        viewsCount: course.viewsCount + 1,
-      },
+      course,
       lessons: courseLessons,
       enrollment,
     });
