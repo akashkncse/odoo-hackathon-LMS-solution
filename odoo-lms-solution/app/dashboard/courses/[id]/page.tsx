@@ -20,8 +20,10 @@ import {
   HelpCircle,
   CheckCircle2,
   ArrowLeft,
+  Trophy,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface Course {
   id: string;
@@ -50,6 +52,13 @@ interface Enrollment {
   enrolledAt: string;
   startedAt: string | null;
   completedAt: string | null;
+}
+
+interface Progress {
+  completedLessons: number;
+  totalLessons: number;
+  percentComplete: number;
+  lessonStatuses: Record<string, "not_started" | "in_progress" | "completed">;
 }
 
 function lessonTypeIcon(type: string) {
@@ -126,6 +135,51 @@ function enrollmentStatusStyle(status: string) {
   }
 }
 
+function ProgressBar({
+  percent,
+  className = "",
+}: {
+  percent: number;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`h-2.5 w-full overflow-hidden rounded-full bg-muted ${className}`}
+    >
+      <div
+        className={`h-full rounded-full transition-all duration-500 ease-out ${
+          percent === 100
+            ? "bg-green-500"
+            : percent > 0
+              ? "bg-blue-500"
+              : "bg-muted-foreground/20"
+        }`}
+        style={{ width: `${percent}%` }}
+      />
+    </div>
+  );
+}
+
+function LessonStatusIcon({
+  status,
+}: {
+  status: "not_started" | "in_progress" | "completed";
+}) {
+  if (status === "completed") {
+    return <CheckCircle2 className="size-4 text-green-500 shrink-0" />;
+  }
+  if (status === "in_progress") {
+    return (
+      <div className="size-4 shrink-0 rounded-full border-2 border-blue-500 flex items-center justify-center">
+        <div className="size-1.5 rounded-full bg-blue-500" />
+      </div>
+    );
+  }
+  return (
+    <div className="size-4 shrink-0 rounded-full border-2 border-muted-foreground/30" />
+  );
+}
+
 export default function CourseDetailPage({
   params,
 }: {
@@ -136,10 +190,10 @@ export default function CourseDetailPage({
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [progress, setProgress] = useState<Progress | null>(null);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState("");
-  const [enrollError, setEnrollError] = useState("");
   const viewTracked = useRef(false);
 
   // Track view count exactly once per page visit
@@ -163,6 +217,7 @@ export default function CourseDetailPage({
         setCourse(data.course);
         setLessons(data.lessons);
         setEnrollment(data.enrollment);
+        setProgress(data.progress || null);
       } catch {
         setError("Something went wrong. Try again.");
       } finally {
@@ -174,7 +229,6 @@ export default function CourseDetailPage({
   }, [id]);
 
   async function handleEnroll() {
-    setEnrollError("");
     setEnrolling(true);
 
     try {
@@ -185,13 +239,27 @@ export default function CourseDetailPage({
       const data = await res.json();
 
       if (!res.ok) {
-        setEnrollError(data.error);
+        toast.error(data.error || "Failed to enroll.");
         return;
       }
 
       setEnrollment(data.enrollment);
+
+      // Initialize progress for newly enrolled user
+      setProgress({
+        completedLessons: 0,
+        totalLessons: lessons.length,
+        percentComplete: 0,
+        lessonStatuses: Object.fromEntries(
+          lessons.map((l) => [l.id, "not_started" as const]),
+        ),
+      });
+
+      toast.success("Successfully enrolled! 🎉", {
+        description: "You now have full access to this course.",
+      });
     } catch {
-      setEnrollError("Failed to enroll. Try again.");
+      toast.error("Failed to enroll. Please try again.");
     } finally {
       setEnrolling(false);
     }
@@ -221,6 +289,9 @@ export default function CourseDetailPage({
     );
   }
 
+  const isEnrolled = !!enrollment;
+  const isCourseCompleted = enrollment?.status === "completed";
+
   return (
     <div className="-m-6">
       {/* Banner */}
@@ -237,7 +308,7 @@ export default function CourseDetailPage({
           </div>
         )}
         {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/30 to-transparent" />
 
         {/* Banner content */}
         <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
@@ -275,6 +346,31 @@ export default function CourseDetailPage({
               </span>
             )}
           </div>
+
+          {/* Progress bar in banner (only if enrolled and has lessons) */}
+          {isEnrolled && progress && progress.totalLessons > 0 && (
+            <div className="mt-3 max-w-md">
+              <div className="flex items-center justify-between text-xs text-white/70 mb-1">
+                <span>
+                  {progress.completedLessons} of {progress.totalLessons} lessons
+                  completed
+                </span>
+                <span className="font-semibold text-white">
+                  {progress.percentComplete}%
+                </span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-white/20">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ease-out ${
+                    progress.percentComplete === 100
+                      ? "bg-green-400"
+                      : "bg-white/90"
+                  }`}
+                  style={{ width: `${progress.percentComplete}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -309,11 +405,40 @@ export default function CourseDetailPage({
               {/* Lessons list */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Course Content</CardTitle>
-                  <CardDescription>
-                    {lessons.length}{" "}
-                    {lessons.length === 1 ? "lesson" : "lessons"} in this course
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Course Content</CardTitle>
+                      <CardDescription>
+                        {lessons.length}{" "}
+                        {lessons.length === 1 ? "lesson" : "lessons"} in this
+                        course
+                        {isEnrolled &&
+                          progress &&
+                          progress.totalLessons > 0 && (
+                            <span className="ml-1">
+                              &middot; {progress.completedLessons} completed
+                            </span>
+                          )}
+                      </CardDescription>
+                    </div>
+                    {isEnrolled &&
+                      progress &&
+                      progress.percentComplete === 100 && (
+                        <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                          <Trophy className="size-4" />
+                          <span className="text-xs font-semibold">
+                            All Done!
+                          </span>
+                        </div>
+                      )}
+                  </div>
+
+                  {/* Progress bar below header */}
+                  {isEnrolled && progress && progress.totalLessons > 0 && (
+                    <div className="mt-3">
+                      <ProgressBar percent={progress.percentComplete} />
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent>
                   {lessons.length === 0 ? (
@@ -323,15 +448,33 @@ export default function CourseDetailPage({
                   ) : (
                     <div className="space-y-1">
                       {lessons.map((lesson, index) => {
-                        const isEnrolled = !!enrollment;
+                        const lessonStatus =
+                          progress?.lessonStatuses[lesson.id] || "not_started";
+
                         const content = (
                           <>
-                            <span className="text-muted-foreground flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                              {index + 1}
-                            </span>
+                            {/* Lesson number or completion indicator */}
+                            {isEnrolled ? (
+                              <LessonStatusIcon status={lessonStatus} />
+                            ) : (
+                              <span className="text-muted-foreground flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                                {index + 1}
+                              </span>
+                            )}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium truncate">
+                                <span
+                                  className={`text-sm font-medium truncate ${
+                                    lessonStatus === "completed" && isEnrolled
+                                      ? "text-muted-foreground"
+                                      : ""
+                                  }`}
+                                >
+                                  {isEnrolled && (
+                                    <span className="text-muted-foreground mr-1.5 text-xs">
+                                      {index + 1}.
+                                    </span>
+                                  )}
                                   {lesson.title}
                                 </span>
                               </div>
@@ -356,7 +499,11 @@ export default function CourseDetailPage({
                             {isEnrolled ? (
                               <Link
                                 href={`/dashboard/courses/${id}/lessons/${lesson.id}`}
-                                className="flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-muted/60 group"
+                                className={`flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-muted/60 group ${
+                                  lessonStatus === "completed"
+                                    ? "opacity-75 hover:opacity-100"
+                                    : ""
+                                }`}
                               >
                                 {content}
                                 <ArrowLeft className="size-4 rotate-180 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground shrink-0" />
@@ -376,18 +523,43 @@ export default function CourseDetailPage({
               </Card>
             </div>
 
-            {/* Right column — Enroll card */}
+            {/* Right column — Enroll / Progress card */}
             <div className="lg:col-span-1">
-              <div className="sticky top-24">
+              <div className="sticky top-24 space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle>
-                      {enrollment ? "You're Enrolled" : "Enroll Now"}
+                      {enrollment
+                        ? isCourseCompleted
+                          ? "Course Completed! 🎉"
+                          : "You're Enrolled"
+                        : "Enroll Now"}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {enrollment ? (
                       <>
+                        {/* Progress ring / summary */}
+                        {progress && progress.totalLessons > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">
+                                Progress
+                              </span>
+                              <span className="font-semibold">
+                                {progress.percentComplete}%
+                              </span>
+                            </div>
+                            <ProgressBar percent={progress.percentComplete} />
+                            <p className="text-xs text-muted-foreground text-center">
+                              {progress.completedLessons} of{" "}
+                              {progress.totalLessons} lessons completed
+                            </p>
+                          </div>
+                        )}
+
+                        <Separator />
+
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">
@@ -431,7 +603,41 @@ export default function CourseDetailPage({
                               </div>
                             )}
                         </div>
+
                         <Separator />
+
+                        {/* Quick action: continue / review */}
+                        {lessons.length > 0 && (
+                          <div>
+                            {(() => {
+                              // Find the first incomplete lesson, or fall back to the first lesson
+                              const nextLesson =
+                                isEnrolled && progress
+                                  ? lessons.find(
+                                      (l) =>
+                                        progress.lessonStatuses[l.id] !==
+                                        "completed",
+                                    ) || lessons[0]
+                                  : lessons[0];
+
+                              return (
+                                <Button asChild className="w-full" size="sm">
+                                  <Link
+                                    href={`/dashboard/courses/${id}/lessons/${nextLesson.id}`}
+                                  >
+                                    {isCourseCompleted
+                                      ? "Review Course"
+                                      : progress &&
+                                          progress.completedLessons > 0
+                                        ? "Continue Learning"
+                                        : "Start Learning"}
+                                  </Link>
+                                </Button>
+                              );
+                            })()}
+                          </div>
+                        )}
+
                         <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
                           <CheckCircle2 className="size-4" />
                           <span>You have access to this course</span>
@@ -455,12 +661,6 @@ export default function CourseDetailPage({
                             <Lock className="size-4" />
                             <span>Requires an invitation</span>
                           </div>
-                        )}
-
-                        {enrollError && (
-                          <p className="text-destructive text-sm text-center">
-                            {enrollError}
-                          </p>
                         )}
 
                         <Button

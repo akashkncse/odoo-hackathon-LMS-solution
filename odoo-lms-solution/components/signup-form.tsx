@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import {
   Card,
@@ -67,12 +68,17 @@ export function SignupForm({
 
                 if (!res.ok) {
                   setError(data.error);
+                  toast.error(data.error || "Signup failed.");
                   return;
                 }
 
+                toast.success("Account created! 🎉", {
+                  description: "Welcome to the platform!",
+                });
                 window.location.href = "/dashboard";
               } catch {
                 setError("Something went wrong. Try again.");
+                toast.error("Something went wrong. Try again.");
               } finally {
                 setLoading(false);
               }

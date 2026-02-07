@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { QuizRunner } from "@/components/quiz-runner";
+import { toast } from "sonner";
 
 interface LessonData {
   id: string;
@@ -315,11 +316,14 @@ export default function LessonViewerPage({
               }
             : prev,
         );
+        toast.success("Lesson completed! ✓", {
+          description: lesson?.title,
+        });
       }
     } catch {
       // Silently fail — navigation is more important than blocking on this
     }
-  }, [courseId, lessonId, progress?.status]);
+  }, [courseId, lessonId, progress?.status, lesson?.title]);
 
   // Called when clicking "Next" or "Finish Course"
   // For non-quiz lessons: mark complete, then navigate
@@ -337,6 +341,9 @@ export default function LessonViewerPage({
   // Called by QuizRunner when the learner scores 100%
   function handleQuizPerfectScore() {
     markAsComplete();
+    toast.success("Perfect Score! 🎉", {
+      description: "Quiz completed — lesson marked as done!",
+    });
   }
 
   if (loading) {

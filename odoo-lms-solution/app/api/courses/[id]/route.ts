@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { courses, lessons, enrollments } from "@/lib/db/schema";
+import { courses, lessons, enrollments, lessonProgress } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -61,6 +61,15 @@ export async function GET(
 
     // Check enrollment status if user is logged in
     let enrollment = null;
+    let progress: {
+      completedLessons: number;
+      totalLessons: number;
+      percentComplete: number;
+      lessonStatuses: Record<
+        string,
+        "not_started" | "in_progress" | "completed"
+      >;
+    } | null = null;
 
     if (session) {
       const [existing] = await db
@@ -80,12 +89,68 @@ export async function GET(
         );
 
       enrollment = existing || null;
+
+      // If enrolled, fetch lesson progress for this user
+      if (enrollment && courseLessons.length > 0) {
+        const lessonIds = courseLessons.map((l) => l.id);
+
+        const progressRows = await db
+          .select({
+            lessonId: lessonProgress.lessonId,
+            status: lessonProgress.status,
+          })
+          .from(lessonProgress)
+          .where(
+            and(
+              eq(lessonProgress.userId, session.user.id),
+              // Filter to only lessons in this course
+              // We use an IN-style check via multiple conditions
+            ),
+          );
+
+        // Build a map of lessonId -> status (only for lessons in this course)
+        const lessonIdSet = new Set(lessonIds);
+        const lessonStatuses: Record<
+          string,
+          "not_started" | "in_progress" | "completed"
+        > = {};
+
+        // Initialize all lessons as not_started
+        for (const lessonId of lessonIds) {
+          lessonStatuses[lessonId] = "not_started";
+        }
+
+        // Overlay actual progress
+        for (const row of progressRows) {
+          if (lessonIdSet.has(row.lessonId)) {
+            lessonStatuses[row.lessonId] = row.status;
+          }
+        }
+
+        const completedLessons = Object.values(lessonStatuses).filter(
+          (s) => s === "completed",
+        ).length;
+
+        const totalLessons = courseLessons.length;
+        const percentComplete =
+          totalLessons > 0
+            ? Math.round((completedLessons / totalLessons) * 100)
+            : 0;
+
+        progress = {
+          completedLessons,
+          totalLessons,
+          percentComplete,
+          lessonStatuses,
+        };
+      }
     }
 
     return NextResponse.json({
       course,
       lessons: courseLessons,
       enrollment,
+      progress,
     });
   } catch (error) {
     console.error("Get course detail error:", error);

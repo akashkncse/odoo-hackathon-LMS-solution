@@ -2,6 +2,7 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import {
   Card,
@@ -52,12 +53,15 @@ export function LoginForm({
 
                 if (!res.ok) {
                   setError(data.error);
+                  toast.error(data.error || "Login failed.");
                   return;
                 }
 
+                toast.success("Welcome back! 👋");
                 window.location.href = "/dashboard";
               } catch {
                 setError("Something went wrong. Try again.");
+                toast.error("Something went wrong. Try again.");
               } finally {
                 setLoading(false);
               }

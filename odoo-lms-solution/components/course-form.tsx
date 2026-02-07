@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -106,13 +107,21 @@ export function CourseForm({ mode, defaultValues }: CourseFormProps) {
 
       if (!res.ok) {
         setError(data.error);
+        toast.error(data.error || "Failed to save course.");
         return;
       }
 
+      toast.success(
+        mode === "create" ? "Course created! 🎉" : "Course updated!",
+        {
+          description: title.trim(),
+        },
+      );
       router.push("/admin/courses");
       router.refresh();
     } catch {
       setError("Something went wrong. Try again.");
+      toast.error("Something went wrong. Try again.");
     } finally {
       setLoading(false);
     }
@@ -139,13 +148,18 @@ export function CourseForm({ mode, defaultValues }: CourseFormProps) {
 
       if (!res.ok) {
         setError(data.error);
+        toast.error(data.error || "Failed to delete course.");
         return;
       }
 
+      toast.success("Course deleted.", {
+        description: defaultValues?.title || "The course has been removed.",
+      });
       router.push("/admin/courses");
       router.refresh();
     } catch {
       setError("Failed to delete course. Try again.");
+      toast.error("Failed to delete course. Try again.");
     } finally {
       setDeleting(false);
     }

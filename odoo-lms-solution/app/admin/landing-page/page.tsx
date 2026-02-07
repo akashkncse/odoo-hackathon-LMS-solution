@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,7 +31,6 @@ export default function LandingPageAdmin() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     async function fetchSettings() {
@@ -58,7 +58,6 @@ export default function LandingPageAdmin() {
 
   async function handleSave() {
     setError("");
-    setSuccess("");
     setSaving(true);
 
     try {
@@ -74,15 +73,14 @@ export default function LandingPageAdmin() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Failed to save settings.");
+        toast.error(data.error || "Failed to save settings.");
         return;
       }
 
       setSettings(data.settings);
-      setSuccess("Landing page settings saved successfully!");
-      setTimeout(() => setSuccess(""), 3000);
+      toast.success("Landing page settings saved successfully!");
     } catch {
-      setError("Failed to save settings. Try again.");
+      toast.error("Failed to save settings. Try again.");
     } finally {
       setSaving(false);
     }
@@ -117,12 +115,6 @@ export default function LandingPageAdmin() {
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/50 dark:text-red-400">
           {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-950/50 dark:text-green-400">
-          {success}
         </div>
       )}
 

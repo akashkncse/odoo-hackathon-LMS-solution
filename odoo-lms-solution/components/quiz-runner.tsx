@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -444,6 +445,7 @@ export function QuizRunner({
 
       if (!res.ok) {
         setError(data.error || "Failed to submit quiz.");
+        toast.error(data.error || "Failed to submit quiz.");
         setState("taking");
         return;
       }
@@ -452,12 +454,33 @@ export function QuizRunner({
       setHistoryKey((prev) => prev + 1);
       setState("results");
 
+      // Toast feedback based on score
+      if (data.summary?.scorePercent === 100) {
+        if (data.summary?.pointsEarned > 0) {
+          toast.success(
+            `Perfect Score! +${data.summary.pointsEarned} points 🏆`,
+            {
+              description: "Amazing work — you aced every question!",
+            },
+          );
+        } else {
+          toast.success("Perfect Score! 🎉", {
+            description: "You got every question right!",
+          });
+        }
+      } else {
+        toast.info(`Score: ${data.summary?.scorePercent}%`, {
+          description: `${data.summary?.correctAnswers} of ${data.summary?.totalQuestions} correct. Try again for a perfect score!`,
+        });
+      }
+
       // Notify parent when learner achieves a perfect score
       if (data.summary?.scorePercent === 100 && onPerfectScore) {
         onPerfectScore();
       }
     } catch {
       setError("Something went wrong submitting the quiz.");
+      toast.error("Something went wrong submitting the quiz.");
       setState("taking");
     }
   }
