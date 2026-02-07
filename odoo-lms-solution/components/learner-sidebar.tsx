@@ -5,6 +5,7 @@ import {
   GraduationCap,
   LogOut,
   Mail,
+  MessageSquare,
   Moon,
   Sun,
   Trophy,
@@ -48,6 +49,11 @@ const navItems = [
     title: "Invitations",
     url: "/dashboard/invitations",
     icon: Mail,
+  },
+  {
+    title: "Discussions",
+    url: "/dashboard/discussions",
+    icon: MessageSquare,
   },
   {
     title: "My Points",

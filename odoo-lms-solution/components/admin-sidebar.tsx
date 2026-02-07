@@ -6,6 +6,7 @@ import {
   BookOpen,
   CreditCard,
   LogOut,
+  MessageSquare,
   Moon,
   PieChart,
   Settings,
@@ -55,6 +56,11 @@ const navItems = [
     title: "Payments",
     url: "/admin/payments",
     icon: CreditCard,
+  },
+  {
+    title: "Discussions",
+    url: "/admin/discussions",
+    icon: MessageSquare,
   },
   {
     title: "Profile",
