@@ -39,10 +39,7 @@ export async function POST(
       .where(eq(courses.id, courseId));
 
     if (!course || !course.published) {
-      return NextResponse.json(
-        { error: "Course not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
     // Verify the user is enrolled in this course
@@ -70,10 +67,7 @@ export async function POST(
       .where(and(eq(quizzes.id, quizId), eq(quizzes.courseId, courseId)));
 
     if (!quiz) {
-      return NextResponse.json(
-        { error: "Quiz not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
 
     // Parse request body
@@ -120,9 +114,7 @@ export async function POST(
     const allOptions = await db
       .select()
       .from(quizOptions)
-      .where(
-        sql`${quizOptions.questionId} IN ${questionIds}`,
-      );
+      .where(sql`${quizOptions.questionId} IN ${questionIds}`);
 
     // Build lookup maps
     const correctOptionsByQuestion = new Map<string, Set<string>>();
@@ -205,18 +197,19 @@ export async function POST(
 
     if (score === 100) {
       // Check if the user has already earned points for a perfect score on this quiz
-      const previousPerfect = existingAttempts.length > 0
-        ? await db
-            .select({ id: quizAttempts.id })
-            .from(quizAttempts)
-            .where(
-              and(
-                eq(quizAttempts.quizId, quizId),
-                eq(quizAttempts.userId, session.user.id),
-                eq(quizAttempts.score, 100),
-              ),
-            )
-        : [];
+      const previousPerfect =
+        existingAttempts.length > 0
+          ? await db
+              .select({ id: quizAttempts.id })
+              .from(quizAttempts)
+              .where(
+                and(
+                  eq(quizAttempts.quizId, quizId),
+                  eq(quizAttempts.userId, session.user.id),
+                  eq(quizAttempts.score, 100),
+                ),
+              )
+          : [];
 
       // Only award points on the first perfect score
       if (previousPerfect.length === 0) {
@@ -274,11 +267,13 @@ export async function POST(
         .where(eq(users.id, session.user.id));
     }
 
-    // Build the results with correct answers revealed
+    // Build the results — only reveal correct answers for questions the user got right
     const results = responseRecords.map((r) => {
       const correctOptions = correctOptionsByQuestion.get(r.questionId);
-      const correctOptionIds = correctOptions
-        ? Array.from(correctOptions)
+      const correctOptionIds = r.isCorrect
+        ? correctOptions
+          ? Array.from(correctOptions)
+          : []
         : [];
 
       return {

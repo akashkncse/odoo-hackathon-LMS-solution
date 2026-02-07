@@ -823,7 +823,9 @@ export function QuizRunner({
           <CardHeader>
             <CardTitle className="text-base">Review Answers</CardTitle>
             <CardDescription>
-              See which questions you got right and wrong.
+              {isPerfect
+                ? "Great job! Here are your correct answers."
+                : "Incorrect answers won't reveal the correct option — retake the quiz to try again!"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -866,12 +868,19 @@ export function QuizRunner({
                       );
 
                       let optionStyle = "bg-white/50 dark:bg-white/5";
-                      if (isCorrectOption) {
-                        optionStyle =
-                          "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-300";
-                      } else if (isSelected && !isCorrectOption) {
-                        optionStyle =
-                          "bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-300 line-through";
+
+                      if (result.isCorrect) {
+                        // User got this question right — highlight correct answer in green
+                        if (isCorrectOption) {
+                          optionStyle =
+                            "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-300";
+                        }
+                      } else {
+                        // User got this question wrong — only highlight their wrong pick in red
+                        if (isSelected) {
+                          optionStyle =
+                            "bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-300 line-through";
+                        }
                       }
 
                       return (
@@ -879,9 +888,9 @@ export function QuizRunner({
                           key={option.id}
                           className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm ${optionStyle}`}
                         >
-                          {isCorrectOption ? (
+                          {result.isCorrect && isCorrectOption ? (
                             <CheckCircle2 className="size-3.5 shrink-0 text-green-600 dark:text-green-400" />
-                          ) : isSelected ? (
+                          ) : isSelected && !result.isCorrect ? (
                             <XCircle className="size-3.5 shrink-0 text-red-500 dark:text-red-400" />
                           ) : (
                             <div className="size-3.5 shrink-0 rounded-full border border-muted-foreground/30" />
@@ -893,7 +902,7 @@ export function QuizRunner({
                           {isSelected && (
                             <Badge
                               variant={
-                                isCorrectOption ? "default" : "destructive"
+                                result.isCorrect ? "default" : "destructive"
                               }
                               className="text-[10px] shrink-0"
                             >
@@ -904,6 +913,14 @@ export function QuizRunner({
                       );
                     })}
                   </div>
+
+                  {/* Hint for wrong answers */}
+                  {!result.isCorrect && (
+                    <p className="ml-9 mt-2 text-xs text-muted-foreground italic">
+                      The correct answer is hidden — try again on your next
+                      attempt!
+                    </p>
+                  )}
                 </div>
               );
             })}
