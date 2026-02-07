@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
-import { courses } from "@/lib/db/schema";
+import { courses, tags, courseTags } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -51,13 +51,18 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { title, description, imageUrl, visibility, accessRule, price, published } = body;
+    const {
+      title,
+      description,
+      imageUrl,
+      visibility,
+      accessRule,
+      price,
+      published,
+    } = body;
 
     if (!title || typeof title !== "string" || title.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Title is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
     if (title.length > 255) {
@@ -91,6 +96,9 @@ export async function POST(request: Request) {
       }
     }
 
+    const body_full = body;
+    const tagIds: string[] | undefined = body_full.tagIds;
+
     const [course] = await db
       .insert(courses)
       .values({
@@ -105,7 +113,30 @@ export async function POST(request: Request) {
       })
       .returning();
 
-    return NextResponse.json({ course }, { status: 201 });
+    // Associate tags if provided
+    let courseTags_result: { id: string; name: string }[] = [];
+    if (tagIds && Array.isArray(tagIds) && tagIds.length > 0) {
+      // Verify all tag IDs exist
+      const existingTags = await db
+        .select({ id: tags.id, name: tags.name })
+        .from(tags)
+        .where(inArray(tags.id, tagIds));
+
+      if (existingTags.length > 0) {
+        await db.insert(courseTags).values(
+          existingTags.map((tag) => ({
+            courseId: course.id,
+            tagId: tag.id,
+          })),
+        );
+        courseTags_result = existingTags;
+      }
+    }
+
+    return NextResponse.json(
+      { course: { ...course, tags: courseTags_result } },
+      { status: 201 },
+    );
   } catch (error) {
     console.error("Create course error:", error);
     return NextResponse.json(

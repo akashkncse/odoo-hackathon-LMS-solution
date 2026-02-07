@@ -9,6 +9,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, BookOpen, ListOrdered, HelpCircle } from "lucide-react";
 import Link from "next/link";
 
+interface CourseTag {
+  id: string;
+  name: string;
+}
+
 interface Course {
   id: string;
   title: string;
@@ -18,6 +23,7 @@ interface Course {
   accessRule: "open" | "invitation" | "payment";
   price: string | null;
   published: boolean;
+  tags?: CourseTag[];
 }
 
 type Tab = "details" | "lessons" | "quizzes";
@@ -145,6 +151,7 @@ export default function EditCoursePage({
               accessRule: course.accessRule,
               price: course.price ?? "",
               published: course.published,
+              tags: course.tags ?? [],
             }}
           />
         </div>

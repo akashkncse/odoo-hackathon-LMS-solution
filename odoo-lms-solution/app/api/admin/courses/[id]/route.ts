@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
-import { courses } from "@/lib/db/schema";
+import { courses, tags, courseTags } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 async function getCourseForAdmin(
@@ -21,6 +21,44 @@ async function getCourseForAdmin(
   }
 
   return course;
+}
+
+async function getCourseTagIds(courseId: string) {
+  const rows = await db
+    .select({
+      tagId: courseTags.tagId,
+      tagName: tags.name,
+    })
+    .from(courseTags)
+    .innerJoin(tags, eq(courseTags.tagId, tags.id))
+    .where(eq(courseTags.courseId, courseId));
+
+  return rows.map((r) => ({ id: r.tagId, name: r.tagName }));
+}
+
+async function syncCourseTags(courseId: string, tagIds: string[]) {
+  // Delete existing associations
+  await db.delete(courseTags).where(eq(courseTags.courseId, courseId));
+
+  // Insert new associations
+  if (tagIds.length > 0) {
+    // Verify all tag IDs exist
+    const existingTags = await db
+      .select({ id: tags.id })
+      .from(tags)
+      .where(inArray(tags.id, tagIds));
+
+    const validTagIds = existingTags.map((t) => t.id);
+
+    if (validTagIds.length > 0) {
+      await db.insert(courseTags).values(
+        validTagIds.map((tagId) => ({
+          courseId,
+          tagId,
+        })),
+      );
+    }
+  }
 }
 
 export async function GET(
@@ -50,7 +88,14 @@ export async function GET(
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ course });
+    const courseTags = await getCourseTagIds(id);
+
+    return NextResponse.json({
+      course: {
+        ...course,
+        tags: courseTags,
+      },
+    });
   } catch (error) {
     console.error("Get course error:", error);
     return NextResponse.json(
@@ -96,6 +141,7 @@ export async function PATCH(
       accessRule,
       price,
       published,
+      tagIds,
     } = body;
 
     const updates: Record<string, unknown> = {};
@@ -169,22 +215,44 @@ export async function PATCH(
       updates.published = published;
     }
 
-    if (Object.keys(updates).length === 0) {
+    if (Object.keys(updates).length === 0 && tagIds === undefined) {
       return NextResponse.json(
         { error: "No fields to update" },
         { status: 400 },
       );
     }
 
-    updates.updatedAt = new Date();
+    if (Object.keys(updates).length > 0) {
+      updates.updatedAt = new Date();
 
-    const [course] = await db
-      .update(courses)
-      .set(updates)
-      .where(eq(courses.id, id))
-      .returning();
+      await db.update(courses).set(updates).where(eq(courses.id, id));
+    }
 
-    return NextResponse.json({ course });
+    // Sync tags if provided
+    if (tagIds !== undefined) {
+      if (!Array.isArray(tagIds)) {
+        return NextResponse.json(
+          { error: "tagIds must be an array" },
+          { status: 400 },
+        );
+      }
+      await syncCourseTags(id, tagIds);
+    }
+
+    // Fetch the updated course with tags
+    const [updatedCourse] = await db
+      .select()
+      .from(courses)
+      .where(eq(courses.id, id));
+
+    const updatedTags = await getCourseTagIds(id);
+
+    return NextResponse.json({
+      course: {
+        ...updatedCourse,
+        tags: updatedTags,
+      },
+    });
   } catch (error) {
     console.error("Update course error:", error);
     return NextResponse.json(

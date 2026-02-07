@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,13 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { X, Plus, Loader2, Tag } from "lucide-react";
+
+interface TagItem {
+  id: string;
+  name: string;
+}
 
 interface CourseFormValues {
   id?: string;
@@ -29,6 +36,7 @@ interface CourseFormValues {
   accessRule: "open" | "invitation" | "payment";
   price: string;
   published: boolean;
+  tags?: TagItem[];
 }
 
 interface CourseFormProps {
@@ -56,6 +64,96 @@ export function CourseForm({ mode, defaultValues }: CourseFormProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Tag management state
+  const [availableTags, setAvailableTags] = useState<TagItem[]>([]);
+  const [selectedTags, setSelectedTags] = useState<TagItem[]>(
+    defaultValues?.tags ?? [],
+  );
+  const [tagInput, setTagInput] = useState("");
+  const [creatingTag, setCreatingTag] = useState(false);
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+
+  // Fetch available tags
+  useEffect(() => {
+    async function fetchTags() {
+      try {
+        const res = await fetch("/api/admin/tags");
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableTags(data.tags || []);
+        }
+      } catch {
+        // Silently fail — tags are optional
+      }
+    }
+    fetchTags();
+  }, []);
+
+  // Filter tags for dropdown
+  const filteredTags = availableTags.filter(
+    (tag) =>
+      !selectedTags.some((s) => s.id === tag.id) &&
+      (tagInput === "" ||
+        tag.name.toLowerCase().includes(tagInput.toLowerCase())),
+  );
+
+  const exactMatch = availableTags.some(
+    (tag) => tag.name.toLowerCase() === tagInput.trim().toLowerCase(),
+  );
+  const alreadySelected = selectedTags.some(
+    (tag) => tag.name.toLowerCase() === tagInput.trim().toLowerCase(),
+  );
+  const canCreateNew =
+    tagInput.trim().length > 0 && !exactMatch && !alreadySelected;
+
+  function handleSelectTag(tag: TagItem) {
+    setSelectedTags((prev) => [...prev, tag]);
+    setTagInput("");
+    setShowTagDropdown(false);
+  }
+
+  function handleRemoveTag(tagId: string) {
+    setSelectedTags((prev) => prev.filter((t) => t.id !== tagId));
+  }
+
+  async function handleCreateTag() {
+    const name = tagInput.trim();
+    if (!name) return;
+
+    setCreatingTag(true);
+    try {
+      const res = await fetch("/api/admin/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (res.ok && data.tag) {
+        // Add to available tags if it's new
+        setAvailableTags((prev) => {
+          if (prev.some((t) => t.id === data.tag.id)) return prev;
+          return [...prev, data.tag].sort((a, b) =>
+            a.name.localeCompare(b.name),
+          );
+        });
+        // Select it
+        setSelectedTags((prev) => {
+          if (prev.some((t) => t.id === data.tag.id)) return prev;
+          return [...prev, data.tag];
+        });
+        setTagInput("");
+        setShowTagDropdown(false);
+        toast.success(`Tag "${data.tag.name}" created`);
+      } else {
+        toast.error(data.error || "Failed to create tag");
+      }
+    } catch {
+      toast.error("Failed to create tag");
+    } finally {
+      setCreatingTag(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -90,6 +188,7 @@ export function CourseForm({ mode, defaultValues }: CourseFormProps) {
         accessRule,
         price: accessRule === "payment" && price ? price : null,
         published,
+        tagIds: selectedTags.map((t) => t.id),
       };
 
       const url =
@@ -224,6 +323,125 @@ export function CourseForm({ mode, defaultValues }: CourseFormProps) {
               />
               <FieldDescription>
                 A cover image for the course. Paste a URL to an image.
+              </FieldDescription>
+            </Field>
+
+            {/* Tags */}
+            <Field>
+              <FieldLabel>
+                <span className="flex items-center gap-1.5">
+                  <Tag className="size-3.5" />
+                  Tags
+                </span>
+              </FieldLabel>
+
+              {/* Selected tags */}
+              {selectedTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {selectedTags.map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      variant="secondary"
+                      className="gap-1 pr-1"
+                    >
+                      {tag.name}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag.id)}
+                        className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20 transition-colors"
+                      >
+                        <X className="size-3" />
+                        <span className="sr-only">Remove {tag.name}</span>
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Tag input */}
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder={
+                    selectedTags.length > 0
+                      ? "Add more tags..."
+                      : "Search or create tags..."
+                  }
+                  value={tagInput}
+                  onChange={(e) => {
+                    setTagInput(e.target.value);
+                    setShowTagDropdown(true);
+                  }}
+                  onFocus={() => setShowTagDropdown(true)}
+                  onBlur={() => {
+                    // Delay to allow click on dropdown items
+                    setTimeout(() => setShowTagDropdown(false), 200);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && canCreateNew) {
+                      e.preventDefault();
+                      handleCreateTag();
+                    } else if (e.key === "Enter" && filteredTags.length === 1) {
+                      e.preventDefault();
+                      handleSelectTag(filteredTags[0]);
+                    } else if (
+                      e.key === "Backspace" &&
+                      tagInput === "" &&
+                      selectedTags.length > 0
+                    ) {
+                      handleRemoveTag(selectedTags[selectedTags.length - 1].id);
+                    }
+                  }}
+                />
+
+                {/* Dropdown */}
+                {showTagDropdown &&
+                  (filteredTags.length > 0 || canCreateNew) && (
+                    <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover p-1 shadow-md max-h-48 overflow-y-auto">
+                      {filteredTags.map((tag) => (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-default"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSelectTag(tag);
+                          }}
+                        >
+                          <Tag className="size-3 text-muted-foreground" />
+                          {tag.name}
+                        </button>
+                      ))}
+                      {canCreateNew && (
+                        <>
+                          {filteredTags.length > 0 && (
+                            <div className="my-1 h-px bg-border -mx-1" />
+                          )}
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-default text-primary"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              handleCreateTag();
+                            }}
+                            disabled={creatingTag}
+                          >
+                            {creatingTag ? (
+                              <Loader2 className="size-3 animate-spin" />
+                            ) : (
+                              <Plus className="size-3" />
+                            )}
+                            Create &quot;{tagInput.trim()}&quot;
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+              </div>
+
+              <FieldDescription>
+                Add tags to help learners find this course. Type to search
+                existing tags or create new ones.
               </FieldDescription>
             </Field>
 
