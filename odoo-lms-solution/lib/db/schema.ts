@@ -252,6 +252,23 @@ export const badgeLevels = pgTable("badge_levels", {
   sortOrder: integer("sort_order").notNull(),
 });
 
+export const certificates = pgTable("certificates", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  courseId: uuid("course_id")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }),
+  enrollmentId: uuid("enrollment_id")
+    .notNull()
+    .references(() => enrollments.id, { onDelete: "cascade" }),
+  certificateNumber: varchar("certificate_number", { length: 50 })
+    .notNull()
+    .unique(),
+  issuedAt: timestamp("issued_at").defaultNow().notNull(),
+});
+
 export const siteSettings = pgTable("site_settings", {
   id: uuid("id").defaultRandom().primaryKey(),
   heroImageUrl: varchar("hero_image_url", { length: 500 }),

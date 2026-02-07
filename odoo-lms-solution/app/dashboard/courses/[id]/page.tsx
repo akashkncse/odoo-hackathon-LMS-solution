@@ -22,6 +22,8 @@ import {
   ArrowLeft,
   Trophy,
   Star,
+  Award,
+  Linkedin,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -668,6 +670,41 @@ export default function CourseDetailPage({
                           <CheckCircle2 className="size-4" />
                           <span>You have access to this course</span>
                         </div>
+
+                        {/* Certificate & LinkedIn — shown when course is completed */}
+                        {isCourseCompleted && (
+                          <>
+                            <Separator />
+                            <div className="space-y-2">
+                              <Button
+                                asChild
+                                variant="outline"
+                                className="w-full gap-1.5"
+                                size="sm"
+                              >
+                                <Link
+                                  href={`/dashboard/courses/${id}/certificate`}
+                                >
+                                  <Award className="size-4 text-amber-500" />
+                                  View Certificate
+                                </Link>
+                              </Button>
+                              <Button
+                                className="w-full gap-1.5 bg-[#0A66C2] hover:bg-[#004182] text-white"
+                                size="sm"
+                                onClick={() => {
+                                  window.open(
+                                    `/dashboard/courses/${id}/certificate`,
+                                    "_self",
+                                  );
+                                }}
+                              >
+                                <Linkedin className="size-4" />
+                                Share on LinkedIn
+                              </Button>
+                            </div>
+                          </>
+                        )}
                       </>
                     ) : (
                       <>

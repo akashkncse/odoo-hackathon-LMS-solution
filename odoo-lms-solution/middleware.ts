@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
 
   const publicRoutes = ["/login", "/signup", "/"];
 
-  if (publicRoutes.includes(pathname)) {
+  if (publicRoutes.includes(pathname) || pathname.startsWith("/verify/")) {
     return NextResponse.next();
   }
 

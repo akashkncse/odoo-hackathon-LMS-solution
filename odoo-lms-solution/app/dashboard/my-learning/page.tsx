@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { BookOpen, Clock, ArrowRight } from "lucide-react";
+import { BookOpen, Clock, ArrowRight, Award } from "lucide-react";
 
 interface EnrollmentData {
   enrollment: {
@@ -107,7 +107,9 @@ export default function MyLearningPage() {
         </p>
       </div>
 
-      {loading && <p className="text-muted-foreground">Loading your courses...</p>}
+      {loading && (
+        <p className="text-muted-foreground">Loading your courses...</p>
+      )}
 
       {error && <p className="text-destructive">{error}</p>}
 
@@ -197,7 +199,7 @@ export default function MyLearningPage() {
                     )}
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex-col gap-2">
                 <Button asChild className="w-full">
                   <Link href={`/dashboard/courses/${course.id}`}>
                     {enrollment.status === "completed" ? (
@@ -215,6 +217,19 @@ export default function MyLearningPage() {
                     )}
                   </Link>
                 </Button>
+                {enrollment.status === "completed" && (
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="w-full gap-1.5"
+                    size="sm"
+                  >
+                    <Link href={`/dashboard/courses/${course.id}/certificate`}>
+                      <Award className="size-4 text-amber-500" />
+                      View Certificate
+                    </Link>
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           ))}
