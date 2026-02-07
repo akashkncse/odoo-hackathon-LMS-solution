@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef, use } from "react";
+import { useBranding } from "@/hooks/use-branding";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   ArrowLeft,
   Printer,
@@ -40,6 +38,7 @@ export default function CertificatePage({
 }) {
   const { id: courseId } = use(params);
 
+  const { platformName } = useBranding();
   const [certificate, setCertificate] = useState<CertificateData | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -128,12 +127,13 @@ export default function CertificatePage({
     const verificationUrl = getVerificationUrl();
 
     // LinkedIn Add to Profile URL
-    const linkedInUrl = new URL(
-      "https://www.linkedin.com/profile/add"
-    );
+    const linkedInUrl = new URL("https://www.linkedin.com/profile/add");
     linkedInUrl.searchParams.set("startTask", "CERTIFICATION_NAME");
-    linkedInUrl.searchParams.set("name", `${certificate.courseTitle} — Certificate of Completion`);
-    linkedInUrl.searchParams.set("organizationName", "LMS Platform");
+    linkedInUrl.searchParams.set(
+      "name",
+      `${certificate.courseTitle} — Certificate of Completion`,
+    );
+    linkedInUrl.searchParams.set("organizationName", platformName);
     linkedInUrl.searchParams.set("issueYear", String(issueYear));
     linkedInUrl.searchParams.set("issueMonth", String(issueMonth));
     linkedInUrl.searchParams.set("certUrl", verificationUrl);
@@ -148,21 +148,27 @@ export default function CertificatePage({
 
   function handleCopyLink() {
     const url = getVerificationUrl();
-    navigator.clipboard.writeText(url).then(() => {
-      toast.success("Verification link copied to clipboard!");
-    }).catch(() => {
-      toast.error("Failed to copy link.");
-    });
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        toast.success("Verification link copied to clipboard!");
+      })
+      .catch(() => {
+        toast.error("Failed to copy link.");
+      });
     setShowShareMenu(false);
   }
 
   function handleCopyCertNumber() {
     if (!certificate) return;
-    navigator.clipboard.writeText(certificate.certificateNumber).then(() => {
-      toast.success("Certificate number copied!");
-    }).catch(() => {
-      toast.error("Failed to copy.");
-    });
+    navigator.clipboard
+      .writeText(certificate.certificateNumber)
+      .then(() => {
+        toast.success("Certificate number copied!");
+      })
+      .catch(() => {
+        toast.error("Failed to copy.");
+      });
   }
 
   function formatDate(dateStr: string): string {
@@ -186,7 +192,9 @@ export default function CertificatePage({
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="size-8 animate-spin text-muted-foreground mb-4" />
         <p className="text-muted-foreground">
-          {generating ? "Generating your certificate..." : "Loading certificate..."}
+          {generating
+            ? "Generating your certificate..."
+            : "Loading certificate..."}
         </p>
       </div>
     );
@@ -200,7 +208,8 @@ export default function CertificatePage({
           {error || "Certificate not available."}
         </p>
         <p className="text-muted-foreground text-sm mt-2 max-w-md text-center">
-          Make sure you have completed all lessons in this course to receive your certificate.
+          Make sure you have completed all lessons in this course to receive
+          your certificate.
         </p>
         <Button asChild variant="outline" className="mt-6">
           <Link href={`/dashboard/courses/${courseId}`}>
@@ -254,13 +263,23 @@ export default function CertificatePage({
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Print */}
-            <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="gap-1.5"
+            >
               <Printer className="size-3.5" />
               Print
             </Button>
 
             {/* Download (Save as PDF) */}
-            <Button variant="outline" size="sm" onClick={handleDownload} className="gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+              className="gap-1.5"
+            >
               <Download className="size-3.5" />
               Save as PDF
             </Button>
@@ -346,10 +365,20 @@ export default function CertificatePage({
             <div className="relative overflow-hidden rounded-2xl border-4 border-amber-300/70 bg-gradient-to-br from-white via-amber-50/30 to-white dark:from-gray-950 dark:via-amber-950/10 dark:to-gray-950 shadow-2xl">
               {/* Decorative corners */}
               <div className="absolute top-0 left-0 w-32 h-32 opacity-10">
-                <svg viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg
+                  viewBox="0 0 128 128"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
                   <path d="M0 0H128L0 128V0Z" fill="url(#cornerGrad1)" />
                   <defs>
-                    <linearGradient id="cornerGrad1" x1="0" y1="0" x2="128" y2="128">
+                    <linearGradient
+                      id="cornerGrad1"
+                      x1="0"
+                      y1="0"
+                      x2="128"
+                      y2="128"
+                    >
                       <stop stopColor="#D97706" />
                       <stop offset="1" stopColor="#F59E0B" stopOpacity="0" />
                     </linearGradient>
@@ -357,10 +386,20 @@ export default function CertificatePage({
                 </svg>
               </div>
               <div className="absolute bottom-0 right-0 w-32 h-32 opacity-10 rotate-180">
-                <svg viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg
+                  viewBox="0 0 128 128"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
                   <path d="M0 0H128L0 128V0Z" fill="url(#cornerGrad2)" />
                   <defs>
-                    <linearGradient id="cornerGrad2" x1="0" y1="0" x2="128" y2="128">
+                    <linearGradient
+                      id="cornerGrad2"
+                      x1="0"
+                      y1="0"
+                      x2="128"
+                      y2="128"
+                    >
                       <stop stopColor="#D97706" />
                       <stop offset="1" stopColor="#F59E0B" stopOpacity="0" />
                     </linearGradient>
@@ -377,7 +416,10 @@ export default function CertificatePage({
                     <div className="relative">
                       <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-xl scale-150" />
                       <div className="relative flex items-center justify-center size-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg">
-                        <Award className="size-10 text-white" strokeWidth={1.5} />
+                        <Award
+                          className="size-10 text-white"
+                          strokeWidth={1.5}
+                        />
                       </div>
                     </div>
                   </div>
@@ -440,7 +482,8 @@ export default function CertificatePage({
                           <span className="font-medium text-foreground">
                             {certificate.totalLessons}
                           </span>{" "}
-                          lesson{certificate.totalLessons !== 1 ? "s" : ""} completed
+                          lesson{certificate.totalLessons !== 1 ? "s" : ""}{" "}
+                          completed
                         </span>
                       </div>
                     )}
@@ -501,7 +544,8 @@ export default function CertificatePage({
               <div className="flex-1 text-center sm:text-left">
                 <h3 className="text-sm font-semibold">Share on LinkedIn</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Add this certificate to your LinkedIn profile and showcase your achievement to your professional network.
+                  Add this certificate to your LinkedIn profile and showcase
+                  your achievement to your professional network.
                 </p>
               </div>
               <Button
@@ -522,16 +566,23 @@ export default function CertificatePage({
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Recipient
                   </span>
-                  <p className="mt-1 text-sm font-medium">{certificate.userName}</p>
-                  <p className="text-xs text-muted-foreground">{certificate.userEmail}</p>
+                  <p className="mt-1 text-sm font-medium">
+                    {certificate.userName}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {certificate.userEmail}
+                  </p>
                 </div>
                 <div>
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Course
                   </span>
-                  <p className="mt-1 text-sm font-medium">{certificate.courseTitle}</p>
+                  <p className="mt-1 text-sm font-medium">
+                    {certificate.courseTitle}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    {certificate.totalLessons} lesson{certificate.totalLessons !== 1 ? "s" : ""}
+                    {certificate.totalLessons} lesson
+                    {certificate.totalLessons !== 1 ? "s" : ""}
                   </p>
                 </div>
                 <div>

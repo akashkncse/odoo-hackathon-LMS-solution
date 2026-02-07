@@ -271,6 +271,8 @@ export const certificates = pgTable("certificates", {
 
 export const siteSettings = pgTable("site_settings", {
   id: uuid("id").defaultRandom().primaryKey(),
+  platformName: varchar("platform_name", { length: 100 }),
+  logoUrl: varchar("logo_url", { length: 500 }),
   heroImageUrl: varchar("hero_image_url", { length: 500 }),
   featuredImageUrl: varchar("featured_image_url", { length: 500 }),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

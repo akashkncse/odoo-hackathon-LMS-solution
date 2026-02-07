@@ -13,7 +13,12 @@ const navLinks = [
   { label: "FAQ", href: "#faq" },
 ];
 
-export function Navbar() {
+interface NavbarProps {
+  platformName?: string;
+  logoUrl?: string | null;
+}
+
+export function Navbar({ platformName = "LearnHub", logoUrl }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -26,10 +31,22 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform group-hover:scale-105">
-            <GraduationCap className="size-5" />
-          </div>
-          <span className="text-lg font-bold tracking-tight">LearnHub</span>
+          {logoUrl ? (
+            <div className="flex size-9 items-center justify-center rounded-lg overflow-hidden bg-muted transition-transform group-hover:scale-105">
+              <img
+                src={logoUrl}
+                alt={platformName}
+                className="size-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform group-hover:scale-105">
+              <GraduationCap className="size-5" />
+            </div>
+          )}
+          <span className="text-lg font-bold tracking-tight">
+            {platformName}
+          </span>
         </Link>
 
         {/* Desktop Nav */}

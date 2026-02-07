@@ -8,9 +8,10 @@ import { ArrowRight, Sparkles } from "lucide-react";
 
 interface CTAProps {
   featuredImageUrl: string | null;
+  platformName?: string;
 }
 
-export function CTA({ featuredImageUrl }: CTAProps) {
+export function CTA({ featuredImageUrl, platformName = "LearnHub" }: CTAProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
 
@@ -127,7 +128,7 @@ export function CTA({ featuredImageUrl }: CTAProps) {
                 {featuredImageUrl ? (
                   <img
                     src={featuredImageUrl}
-                    alt="Start learning on LearnHub"
+                    alt={`Start learning on ${platformName}`}
                     className="w-full rounded-2xl border border-border/50 shadow-xl object-cover aspect-[4/3]"
                   />
                 ) : (

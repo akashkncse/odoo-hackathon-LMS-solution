@@ -7,9 +7,10 @@ import { ArrowRight, Play } from "lucide-react";
 
 interface HeroProps {
   heroImageUrl: string | null;
+  platformName?: string;
 }
 
-export function Hero({ heroImageUrl }: HeroProps) {
+export function Hero({ heroImageUrl, platformName = "LearnHub" }: HeroProps) {
   return (
     <section className="relative overflow-hidden pt-16">
       {/* Background gradient */}
@@ -133,7 +134,7 @@ export function Hero({ heroImageUrl }: HeroProps) {
               {heroImageUrl ? (
                 <img
                   src={heroImageUrl}
-                  alt="LearnHub platform preview"
+                  alt={`${platformName} platform preview`}
                   className="relative w-full rounded-2xl border border-border/50 shadow-2xl shadow-primary/[0.08] object-cover aspect-[4/3]"
                 />
               ) : (
@@ -151,9 +152,21 @@ export function Hero({ heroImageUrl }: HeroProps) {
                     {/* Fake cards */}
                     <div className="grid grid-cols-3 gap-3">
                       {[
-                        { label: "Courses", value: "12", color: "bg-blue-500/20 text-blue-600" },
-                        { label: "Points", value: "850", color: "bg-emerald-500/20 text-emerald-600" },
-                        { label: "Rank", value: "#3", color: "bg-amber-500/20 text-amber-600" },
+                        {
+                          label: "Courses",
+                          value: "12",
+                          color: "bg-blue-500/20 text-blue-600",
+                        },
+                        {
+                          label: "Points",
+                          value: "850",
+                          color: "bg-emerald-500/20 text-emerald-600",
+                        },
+                        {
+                          label: "Rank",
+                          value: "#3",
+                          color: "bg-amber-500/20 text-amber-600",
+                        },
                       ].map((card) => (
                         <div
                           key={card.label}
@@ -162,7 +175,9 @@ export function Hero({ heroImageUrl }: HeroProps) {
                           <p className="text-[10px] font-medium text-muted-foreground sm:text-xs">
                             {card.label}
                           </p>
-                          <p className={`mt-1 text-lg font-bold sm:text-xl ${card.color.split(" ")[1]}`}>
+                          <p
+                            className={`mt-1 text-lg font-bold sm:text-xl ${card.color.split(" ")[1]}`}
+                          >
                             {card.value}
                           </p>
                         </div>

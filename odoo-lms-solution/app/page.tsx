@@ -12,6 +12,8 @@ import { CTA } from "@/components/landing/cta";
 import { Footer } from "@/components/landing/footer";
 
 interface SiteSettings {
+  platformName: string | null;
+  logoUrl: string | null;
   heroImageUrl: string | null;
   featuredImageUrl: string | null;
 }
@@ -32,6 +34,8 @@ const defaultStats: PlatformStats = {
 
 export default function Home() {
   const [settings, setSettings] = useState<SiteSettings>({
+    platformName: null,
+    logoUrl: null,
     heroImageUrl: null,
     featuredImageUrl: null,
   });
@@ -64,17 +68,29 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen">
-      <Navbar />
+      <Navbar
+        platformName={settings.platformName ?? undefined}
+        logoUrl={settings.logoUrl}
+      />
       <main>
-        <Hero heroImageUrl={settings.heroImageUrl} />
+        <Hero
+          heroImageUrl={settings.heroImageUrl}
+          platformName={settings.platformName ?? undefined}
+        />
         <Stats stats={stats} />
         <Features />
         <HowItWorks />
         <Testimonials />
         <FAQ />
-        <CTA featuredImageUrl={settings.featuredImageUrl} />
+        <CTA
+          featuredImageUrl={settings.featuredImageUrl}
+          platformName={settings.platformName ?? undefined}
+        />
       </main>
-      <Footer />
+      <Footer
+        platformName={settings.platformName ?? undefined}
+        logoUrl={settings.logoUrl}
+      />
     </div>
   );
 }

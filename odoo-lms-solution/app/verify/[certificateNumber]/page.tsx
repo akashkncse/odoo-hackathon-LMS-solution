@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import { useBranding } from "@/hooks/use-branding";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -34,6 +35,7 @@ export default function VerifyCertificatePage({
 }) {
   const { certificateNumber } = use(params);
 
+  const { platformName } = useBranding();
   const [certificate, setCertificate] = useState<VerifiedCertificate | null>(
     null,
   );
@@ -339,7 +341,7 @@ export default function VerifyCertificatePage({
 
         {/* Footer note */}
         <p className="text-center text-xs text-muted-foreground/60 pb-8">
-          This certificate was issued by the LMS Platform. The authenticity of
+          This certificate was issued by {platformName}. The authenticity of
           this certificate has been verified.
         </p>
       </div>

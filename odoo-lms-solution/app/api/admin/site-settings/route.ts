@@ -22,6 +22,8 @@ export async function GET() {
       return NextResponse.json({
         settings: {
           id: null,
+          platformName: null,
+          logoUrl: null,
           heroImageUrl: null,
           featuredImageUrl: null,
         },
@@ -51,9 +53,41 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { heroImageUrl, featuredImageUrl } = body;
+    const { platformName, logoUrl, heroImageUrl, featuredImageUrl } = body;
 
     const updates: Record<string, unknown> = {};
+
+    if (platformName !== undefined) {
+      if (platformName !== null && typeof platformName !== "string") {
+        return NextResponse.json(
+          { error: "platformName must be a string or null" },
+          { status: 400 },
+        );
+      }
+      if (typeof platformName === "string" && platformName.length > 100) {
+        return NextResponse.json(
+          { error: "platformName must be 100 characters or less" },
+          { status: 400 },
+        );
+      }
+      updates.platformName = platformName?.trim() || null;
+    }
+
+    if (logoUrl !== undefined) {
+      if (logoUrl !== null && typeof logoUrl !== "string") {
+        return NextResponse.json(
+          { error: "logoUrl must be a string or null" },
+          { status: 400 },
+        );
+      }
+      if (typeof logoUrl === "string" && logoUrl.length > 500) {
+        return NextResponse.json(
+          { error: "logoUrl must be 500 characters or less" },
+          { status: 400 },
+        );
+      }
+      updates.logoUrl = logoUrl || null;
+    }
 
     if (heroImageUrl !== undefined) {
       if (heroImageUrl !== null && typeof heroImageUrl !== "string") {
@@ -78,7 +112,10 @@ export async function PATCH(request: Request) {
           { status: 400 },
         );
       }
-      if (typeof featuredImageUrl === "string" && featuredImageUrl.length > 500) {
+      if (
+        typeof featuredImageUrl === "string" &&
+        featuredImageUrl.length > 500
+      ) {
         return NextResponse.json(
           { error: "featuredImageUrl must be 500 characters or less" },
           { status: 400 },
@@ -106,6 +143,8 @@ export async function PATCH(request: Request) {
       const [created] = await db
         .insert(siteSettings)
         .values({
+          platformName: (updates.platformName as string | null) ?? null,
+          logoUrl: (updates.logoUrl as string | null) ?? null,
           heroImageUrl: (updates.heroImageUrl as string | null) ?? null,
           featuredImageUrl: (updates.featuredImageUrl as string | null) ?? null,
           updatedAt: updates.updatedAt as Date,

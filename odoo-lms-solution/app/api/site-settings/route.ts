@@ -9,6 +9,8 @@ export async function GET() {
     if (rows.length === 0) {
       return NextResponse.json({
         settings: {
+          platformName: null,
+          logoUrl: null,
           heroImageUrl: null,
           featuredImageUrl: null,
         },
@@ -19,6 +21,8 @@ export async function GET() {
 
     return NextResponse.json({
       settings: {
+        platformName: settings.platformName,
+        logoUrl: settings.logoUrl,
         heroImageUrl: settings.heroImageUrl,
         featuredImageUrl: settings.featuredImageUrl,
       },

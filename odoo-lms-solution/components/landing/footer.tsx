@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { GraduationCap } from "lucide-react";
 
+interface FooterProps {
+  platformName?: string;
+  logoUrl?: string | null;
+}
+
 const footerLinks = {
   platform: [
     { label: "Browse Courses", href: "/dashboard/courses" },
@@ -18,7 +23,7 @@ const footerLinks = {
   ],
 };
 
-export function Footer() {
+export function Footer({ platformName = "LearnHub", logoUrl }: FooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -29,11 +34,21 @@ export function Footer() {
           {/* Brand column */}
           <div className="lg:col-span-2">
             <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform group-hover:scale-105">
-                <GraduationCap className="size-5" />
-              </div>
+              {logoUrl ? (
+                <div className="flex size-9 items-center justify-center rounded-lg overflow-hidden bg-muted transition-transform group-hover:scale-105">
+                  <img
+                    src={logoUrl}
+                    alt={platformName}
+                    className="size-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform group-hover:scale-105">
+                  <GraduationCap className="size-5" />
+                </div>
+              )}
               <span className="text-lg font-bold tracking-tight">
-                LearnHub
+                {platformName}
               </span>
             </Link>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
@@ -53,7 +68,7 @@ export function Footer() {
                     >
                       {String.fromCharCode(65 + i)}
                     </div>
-                  )
+                  ),
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -104,7 +119,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="flex flex-col items-center justify-between gap-4 border-t border-border/40 py-6 sm:flex-row">
           <p className="text-xs text-muted-foreground">
-            &copy; {currentYear} LearnHub. All rights reserved.
+            &copy; {currentYear} {platformName}. All rights reserved.
           </p>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <span>Built with</span>

@@ -3,11 +3,12 @@
 import {
   BarChart3,
   BookOpen,
-  LayoutDashboard,
   LogOut,
+  Settings,
   UserCircle,
   Users,
 } from "lucide-react";
+import { useBranding } from "@/hooks/use-branding";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -52,9 +53,9 @@ const superadminItems = [
     icon: Users,
   },
   {
-    title: "Landing Page",
+    title: "Site Settings",
     url: "/admin/landing-page",
-    icon: LayoutDashboard,
+    icon: Settings,
   },
 ];
 
@@ -63,6 +64,7 @@ export function AdminSidebar() {
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  const { platformName, logoUrl } = useBranding();
 
   useEffect(() => {
     async function fetchRole() {
@@ -100,11 +102,23 @@ export function AdminSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/admin">
-                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <BookOpen className="size-4" />
-                </div>
+                {logoUrl ? (
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden bg-muted">
+                    <img
+                      src={logoUrl}
+                      alt={platformName}
+                      className="size-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                    <BookOpen className="size-4" />
+                  </div>
+                )}
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">LMS Admin</span>
+                  <span className="truncate font-semibold">
+                    {platformName} Admin
+                  </span>
                   <span className="truncate text-xs text-muted-foreground">
                     Dashboard
                   </span>

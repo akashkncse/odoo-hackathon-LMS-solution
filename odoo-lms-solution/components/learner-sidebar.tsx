@@ -7,6 +7,7 @@ import {
   Trophy,
   UserCircle,
 } from "lucide-react";
+import { useBranding } from "@/hooks/use-branding";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
@@ -53,6 +54,7 @@ export function LearnerSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const { platformName, logoUrl } = useBranding();
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -73,11 +75,21 @@ export function LearnerSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <GraduationCap className="size-4" />
-                </div>
+                {logoUrl ? (
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden bg-muted">
+                    <img
+                      src={logoUrl}
+                      alt={platformName}
+                      className="size-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                    <GraduationCap className="size-4" />
+                  </div>
+                )}
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">LMS Platform</span>
+                  <span className="truncate font-semibold">{platformName}</span>
                   <span className="truncate text-xs text-muted-foreground">
                     Learner
                   </span>
