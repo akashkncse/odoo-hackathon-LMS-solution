@@ -43,6 +43,7 @@ interface Lesson {
   type: "video" | "document" | "image" | "quiz";
   description: string | null;
   sortOrder: number;
+  quizId: string | null;
   videoUrl: string | null;
   videoDuration: number | null;
   fileUrl: string | null;
@@ -156,6 +157,7 @@ export function LessonList({ courseId }: LessonListProps) {
       videoDuration: lesson.videoDuration,
       fileUrl: lesson.fileUrl ?? "",
       allowDownload: lesson.allowDownload,
+      quizId: lesson.quizId ?? null,
     });
     setFormOpen(true);
   }
@@ -172,7 +174,7 @@ export function LessonList({ courseId }: LessonListProps) {
     try {
       const res = await fetch(
         `/api/admin/courses/${courseId}/lessons/${deletingLesson.id}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
 
       const data = await res.json();
@@ -214,7 +216,7 @@ export function LessonList({ courseId }: LessonListProps) {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ orderedIds }),
-        }
+        },
       );
 
       const data = await res.json();
@@ -244,9 +246,7 @@ export function LessonList({ courseId }: LessonListProps) {
       <Card>
         <CardContent className="flex items-center justify-center py-12">
           <Loader2 className="size-5 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-muted-foreground">
-            Loading lessons...
-          </span>
+          <span className="ml-2 text-muted-foreground">Loading lessons...</span>
         </CardContent>
       </Card>
     );
@@ -326,7 +326,10 @@ export function LessonList({ courseId }: LessonListProps) {
                           <span className="ml-1 capitalize">{lesson.type}</span>
                         </Badge>
                       </div>
-                      {(lesson.description || lesson.videoDuration || lesson.videoUrl || lesson.fileUrl) && (
+                      {(lesson.description ||
+                        lesson.videoDuration ||
+                        lesson.videoUrl ||
+                        lesson.fileUrl) && (
                         <div className="flex items-center gap-3 mt-1">
                           {lesson.description && (
                             <p className="text-muted-foreground text-xs line-clamp-1">

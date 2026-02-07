@@ -35,6 +35,12 @@ export interface LessonFormValues {
   videoDuration: number | null;
   fileUrl: string;
   allowDownload: boolean;
+  quizId?: string | null;
+}
+
+interface QuizOption {
+  id: string;
+  title: string;
 }
 
 interface LessonFormProps {
@@ -54,6 +60,7 @@ const emptyValues: LessonFormValues = {
   videoDuration: null,
   fileUrl: "",
   allowDownload: false,
+  quizId: null,
 };
 
 export function LessonForm({
@@ -66,13 +73,17 @@ export function LessonForm({
 }: LessonFormProps) {
   const [title, setTitle] = useState("");
   const [type, setType] = useState<"video" | "document" | "image" | "quiz">(
-    "video"
+    "video",
   );
   const [description, setDescription] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [videoDuration, setVideoDuration] = useState("");
   const [fileUrl, setFileUrl] = useState("");
   const [allowDownload, setAllowDownload] = useState(false);
+  const [quizId, setQuizId] = useState<string | null>(null);
+
+  const [availableQuizzes, setAvailableQuizzes] = useState<QuizOption[]>([]);
+  const [loadingQuizzes, setLoadingQuizzes] = useState(false);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -88,13 +99,41 @@ export function LessonForm({
       setVideoDuration(
         vals.videoDuration !== null && vals.videoDuration !== undefined
           ? String(vals.videoDuration)
-          : ""
+          : "",
       );
       setFileUrl(vals.fileUrl);
       setAllowDownload(vals.allowDownload);
+      setQuizId(vals.quizId ?? null);
       setError("");
     }
   }, [open, defaultValues]);
+
+  // Fetch available quizzes when type is "quiz"
+  useEffect(() => {
+    if (open && type === "quiz") {
+      setLoadingQuizzes(true);
+      fetch(`/api/admin/courses/${courseId}/quizzes`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.quizzes && Array.isArray(data.quizzes)) {
+            setAvailableQuizzes(
+              data.quizzes.map((q: { id: string; title: string }) => ({
+                id: q.id,
+                title: q.title,
+              })),
+            );
+          } else {
+            setAvailableQuizzes([]);
+          }
+        })
+        .catch(() => {
+          setAvailableQuizzes([]);
+        })
+        .finally(() => {
+          setLoadingQuizzes(false);
+        });
+    }
+  }, [open, type, courseId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -135,6 +174,11 @@ export function LessonForm({
         allowDownload:
           type === "document" || type === "image" ? allowDownload : false,
       };
+
+      // Include quizId when type is quiz
+      if (type === "quiz") {
+        body.quizId = quizId || null;
+      }
 
       const url =
         mode === "create"
@@ -311,12 +355,69 @@ export function LessonForm({
             )}
 
             {type === "quiz" && (
-              <div className="rounded-md border border-dashed p-4 text-center">
-                <p className="text-muted-foreground text-sm">
-                  Quiz configuration will be available after creating the lesson.
-                  You&apos;ll be able to add questions and options from the quiz
-                  editor.
-                </p>
+              <div className="space-y-4">
+                <Field>
+                  <FieldLabel htmlFor="lesson-quiz-select">
+                    Link Quiz
+                  </FieldLabel>
+                  {loadingQuizzes ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                      <svg
+                        className="animate-spin size-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Loading quizzes...
+                    </div>
+                  ) : availableQuizzes.length === 0 ? (
+                    <div className="rounded-md border border-dashed p-4 text-center">
+                      <p className="text-muted-foreground text-sm">
+                        No quizzes available for this course. Go to the
+                        &ldquo;Quizzes&rdquo; tab to create one first, then come
+                        back here to link it to this lesson.
+                      </p>
+                    </div>
+                  ) : (
+                    <Select
+                      value={quizId ?? "none"}
+                      onValueChange={(val) =>
+                        setQuizId(val === "none" ? null : val)
+                      }
+                    >
+                      <SelectTrigger id="lesson-quiz-select" className="w-full">
+                        <SelectValue placeholder="Select a quiz to link" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No quiz selected</SelectItem>
+                        {availableQuizzes.map((q) => (
+                          <SelectItem key={q.id} value={q.id}>
+                            {q.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <FieldDescription>
+                    Select an existing quiz to display when learners open this
+                    lesson. You can create and manage quizzes from the
+                    &ldquo;Quizzes&rdquo; tab.
+                  </FieldDescription>
+                </Field>
               </div>
             )}
           </FieldGroup>

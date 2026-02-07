@@ -103,6 +103,7 @@ export async function POST(
       fileUrl,
       allowDownload,
       sortOrder,
+      quizId,
     } = body;
 
     // Validate title
@@ -186,6 +187,7 @@ export async function POST(
         videoDuration: videoDuration ?? null,
         fileUrl: fileUrl || null,
         allowDownload: allowDownload ?? false,
+        quizId: type === "quiz" && quizId ? quizId : null,
       })
       .returning();
 

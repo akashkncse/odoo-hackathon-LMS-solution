@@ -3,9 +3,10 @@
 import { useEffect, useState, use } from "react";
 import { CourseForm } from "@/components/course-form";
 import { LessonList } from "@/components/lesson-list";
+import { QuizEditor } from "@/components/quiz-editor";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, ListOrdered } from "lucide-react";
+import { ArrowLeft, BookOpen, ListOrdered, HelpCircle } from "lucide-react";
 import Link from "next/link";
 
 interface Course {
@@ -19,7 +20,7 @@ interface Course {
   published: boolean;
 }
 
-type Tab = "details" | "lessons";
+type Tab = "details" | "lessons" | "quizzes";
 
 export default function EditCoursePage({
   params,
@@ -87,6 +88,11 @@ export default function EditCoursePage({
       label: "Lessons",
       icon: <ListOrdered className="size-4" />,
     },
+    {
+      key: "quizzes",
+      label: "Quizzes",
+      icon: <HelpCircle className="size-4" />,
+    },
   ];
 
   return (
@@ -101,7 +107,7 @@ export default function EditCoursePage({
         </Button>
         <h1 className="text-2xl font-bold truncate">{course.title}</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Manage course details and lessons.
+          Manage course details, lessons, and quizzes.
         </p>
       </div>
 
@@ -145,6 +151,8 @@ export default function EditCoursePage({
       )}
 
       {activeTab === "lessons" && <LessonList courseId={course.id} />}
+
+      {activeTab === "quizzes" && <QuizEditor courseId={course.id} />}
     </div>
   );
 }

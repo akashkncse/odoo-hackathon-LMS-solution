@@ -118,6 +118,7 @@ export async function PATCH(
       fileUrl,
       allowDownload,
       sortOrder,
+      quizId,
     } = body;
 
     const updates: Record<string, unknown> = {};
@@ -221,6 +222,21 @@ export async function PATCH(
         );
       }
       updates.sortOrder = sortOrder;
+    }
+
+    // Validate and set quizId
+    if (quizId !== undefined) {
+      if (quizId === null || quizId === "") {
+        updates.quizId = null;
+      } else {
+        if (typeof quizId !== "string") {
+          return NextResponse.json(
+            { error: "quizId must be a string" },
+            { status: 400 },
+          );
+        }
+        updates.quizId = quizId;
+      }
     }
 
     if (Object.keys(updates).length === 0) {

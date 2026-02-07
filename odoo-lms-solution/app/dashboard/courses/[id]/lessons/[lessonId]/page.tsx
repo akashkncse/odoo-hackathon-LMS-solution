@@ -19,6 +19,7 @@ import {
   PlayCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { QuizRunner } from "@/components/quiz-runner";
 
 interface LessonData {
   id: string;
@@ -235,18 +236,6 @@ function ImageViewer({
   );
 }
 
-function QuizPlaceholder() {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16">
-      <HelpCircle className="size-12 text-muted-foreground/50 mb-3" />
-      <p className="text-lg font-medium mb-1">Quiz</p>
-      <p className="text-muted-foreground text-sm">
-        Quiz functionality is coming soon.
-      </p>
-    </div>
-  );
-}
-
 function NoContent({ type }: { type: string }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16">
@@ -434,8 +423,16 @@ export default function LessonViewerPage({
             title={lesson.title}
             allowDownload={lesson.allowDownload}
           />
-        ) : lesson.type === "quiz" ? (
-          <QuizPlaceholder />
+        ) : lesson.type === "quiz" && lesson.quizId ? (
+          <QuizRunner courseId={courseId} quizId={lesson.quizId} />
+        ) : lesson.type === "quiz" && !lesson.quizId ? (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16">
+            <HelpCircle className="size-12 text-muted-foreground/50 mb-3" />
+            <p className="text-lg font-medium mb-1">Quiz</p>
+            <p className="text-muted-foreground text-sm">
+              No quiz has been linked to this lesson yet.
+            </p>
+          </div>
         ) : (
           <NoContent type={lesson.type} />
         )}
