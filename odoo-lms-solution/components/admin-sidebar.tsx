@@ -1,13 +1,21 @@
 "use client";
 
-import { BarChart3, BookOpen, LayoutDashboard, Users } from "lucide-react";
-import { usePathname } from "next/navigation";
+import {
+  BarChart3,
+  BookOpen,
+  LayoutDashboard,
+  LogOut,
+  Users,
+} from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -46,7 +54,9 @@ const superadminItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     async function fetchRole() {
@@ -64,6 +74,18 @@ export function AdminSidebar() {
   }, []);
 
   const isSuperadmin = role === "superadmin";
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      toast.success("Logged out successfully");
+      router.push("/login");
+    } catch {
+      toast.error("Failed to log out. Please try again.");
+      setLoggingOut(false);
+    }
+  }
 
   return (
     <Sidebar collapsible="icon">
@@ -135,6 +157,21 @@ export function AdminSidebar() {
           </SidebarGroup>
         )}
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={handleLogout}
+              disabled={loggingOut}
+              tooltip="Log out"
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="size-4" />
+              <span>{loggingOut ? "Logging out..." : "Log out"}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

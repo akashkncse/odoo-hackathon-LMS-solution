@@ -1,12 +1,15 @@
 "use client";
 
-import { BookOpen, GraduationCap, Trophy } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { BookOpen, GraduationCap, LogOut, Trophy } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -37,6 +40,20 @@ const navItems = [
 
 export function LearnerSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      toast.success("Logged out successfully");
+      router.push("/login");
+    } catch {
+      toast.error("Failed to log out. Please try again.");
+      setLoggingOut(false);
+    }
+  }
 
   return (
     <Sidebar collapsible="icon">
@@ -81,6 +98,21 @@ export function LearnerSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={handleLogout}
+              disabled={loggingOut}
+              tooltip="Log out"
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="size-4" />
+              <span>{loggingOut ? "Logging out..." : "Log out"}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
