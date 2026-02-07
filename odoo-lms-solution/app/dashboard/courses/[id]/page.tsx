@@ -314,10 +314,10 @@ export default function CourseDetailPage({
                     </p>
                   ) : (
                     <div className="space-y-1">
-                      {lessons.map((lesson, index) => (
-                        <div key={lesson.id}>
-                          {index > 0 && <Separator className="my-1" />}
-                          <div className="flex items-center gap-3 rounded-md px-3 py-2.5">
+                      {lessons.map((lesson, index) => {
+                        const isEnrolled = !!enrollment;
+                        const content = (
+                          <>
                             <span className="text-muted-foreground flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
                               {index + 1}
                             </span>
@@ -339,9 +339,29 @@ export default function CourseDetailPage({
                                 {lessonTypeLabel(lesson.type)}
                               </span>
                             </div>
+                          </>
+                        );
+
+                        return (
+                          <div key={lesson.id}>
+                            {index > 0 && <Separator className="my-1" />}
+                            {isEnrolled ? (
+                              <Link
+                                href={`/dashboard/courses/${id}/lessons/${lesson.id}`}
+                                className="flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-muted/60 group"
+                              >
+                                {content}
+                                <ArrowLeft className="size-4 rotate-180 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground shrink-0" />
+                              </Link>
+                            ) : (
+                              <div className="flex items-center gap-3 rounded-md px-3 py-2.5 opacity-75">
+                                {content}
+                                <Lock className="size-4 text-muted-foreground/50 shrink-0" />
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
