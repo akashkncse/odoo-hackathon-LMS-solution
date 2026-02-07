@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FileUpload } from "@/components/file-upload";
 
 export interface LessonFormValues {
   id?: string;
@@ -314,21 +315,28 @@ export function LessonForm({
             {(type === "document" || type === "image") && (
               <>
                 <Field>
-                  <FieldLabel htmlFor="lesson-file-url">File URL</FieldLabel>
-                  <Input
-                    id="lesson-file-url"
-                    type="url"
-                    placeholder={
+                  <FieldLabel>
+                    {type === "document" ? "Document File" : "Image File"}
+                  </FieldLabel>
+                  <FileUpload
+                    imageOnly={type === "image"}
+                    maxSizeMB={type === "image" ? 5 : 25}
+                    folder={`lessons/${type}s`}
+                    currentUrl={fileUrl || null}
+                    onUpload={(url) => setFileUrl(url)}
+                    onRemove={() => setFileUrl("")}
+                    accept={
                       type === "document"
-                        ? "https://example.com/document.pdf"
-                        : "https://example.com/image.png"
+                        ? ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"
+                        : "image/*"
                     }
-                    value={fileUrl}
-                    onChange={(e) => setFileUrl(e.target.value)}
+                    description={
+                      type === "document"
+                        ? "Upload a PDF, Word, PowerPoint, Excel, or text file. Max 25MB."
+                        : "Upload an image file (JPG, PNG, WebP, GIF, SVG). Max 5MB."
+                    }
+                    disabled={loading}
                   />
-                  <FieldDescription>
-                    A direct link to the {type} file.
-                  </FieldDescription>
                 </Field>
 
                 <Field orientation="horizontal">

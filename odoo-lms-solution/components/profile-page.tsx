@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { FileUpload } from "@/components/file-upload";
 import { toast } from "sonner";
 import {
   User,
@@ -30,7 +31,6 @@ import {
   KeyRound,
   Eye,
   EyeOff,
-  Save,
 } from "lucide-react";
 
 interface UserProfile {
@@ -166,14 +166,15 @@ export function ProfilePage() {
     }
   }
 
-  async function handleSaveAvatar() {
+  async function handleSaveAvatar(url?: string) {
+    const urlToSave = url !== undefined ? url : avatarValue.trim();
     setSavingAvatar(true);
     try {
       const res = await fetch("/api/me/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          avatarUrl: avatarValue.trim() || null,
+          avatarUrl: urlToSave || null,
         }),
       });
 
@@ -187,7 +188,7 @@ export function ProfilePage() {
       setProfile(data.user);
       setEditingAvatar(false);
       toast.success(
-        avatarValue.trim() ? "Avatar updated successfully" : "Avatar removed",
+        urlToSave ? "Avatar updated successfully" : "Avatar removed",
       );
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -404,37 +405,26 @@ export function ProfilePage() {
               Change Avatar
             </CardTitle>
             <CardDescription>
-              Paste a URL to an image to use as your avatar. Leave empty to
-              remove.
+              Upload an image to use as your avatar, or remove your current one.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-4">
-              <Input
-                type="url"
-                placeholder="https://example.com/my-photo.jpg"
-                value={avatarValue}
-                onChange={(e) => setAvatarValue(e.target.value)}
-                disabled={savingAvatar}
-              />
-              {avatarValue.trim() && (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground">
-                    Preview:
-                  </span>
-                  <div className="size-12 rounded-full overflow-hidden border-2 border-border">
-                    <img
-                      src={avatarValue.trim()}
-                      alt="Avatar preview"
-                      className="size-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+            <FileUpload
+              imageOnly
+              maxSizeMB={5}
+              folder="avatars"
+              currentUrl={avatarValue || null}
+              onUpload={(url) => {
+                setAvatarValue(url);
+                handleSaveAvatar(url);
+              }}
+              onRemove={() => {
+                setAvatarValue("");
+                handleSaveAvatar("");
+              }}
+              description="JPG, PNG, WebP, or GIF. Max 5MB. Square images work best."
+              disabled={savingAvatar}
+            />
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Button
@@ -443,18 +433,6 @@ export function ProfilePage() {
               disabled={savingAvatar}
             >
               Cancel
-            </Button>
-            <Button
-              onClick={handleSaveAvatar}
-              disabled={savingAvatar}
-              className="gap-2"
-            >
-              {savingAvatar ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Save className="size-4" />
-              )}
-              {savingAvatar ? "Saving..." : "Save Avatar"}
             </Button>
           </CardFooter>
         </Card>

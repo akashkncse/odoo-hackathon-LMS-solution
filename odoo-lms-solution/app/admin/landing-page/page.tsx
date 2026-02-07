@@ -10,9 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ImageIcon, Save, ExternalLink, Trash2, Eye } from "lucide-react";
+import { FileUpload } from "@/components/file-upload";
+import { ImageIcon, Save, ExternalLink, Eye } from "lucide-react";
 
 interface SiteSettings {
   id: string | null;
@@ -133,59 +132,16 @@ export default function LandingPageAdmin() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="heroImageUrl">Image URL</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="heroImageUrl"
-                  placeholder="https://images.unsplash.com/..."
-                  value={heroImageUrl}
-                  onChange={(e) => setHeroImageUrl(e.target.value)}
-                />
-                {heroImageUrl && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setHeroImageUrl("")}
-                    title="Clear"
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                )}
-              </div>
-              <p className="text-muted-foreground text-xs">
-                Paste a direct link to an image. You can use services like
-                Unsplash, Imgur, or any image hosting.
-              </p>
-            </div>
-
-            {/* Preview */}
-            {heroImageUrl && (
-              <div className="space-y-2">
-                <Label className="text-muted-foreground text-xs">Preview</Label>
-                <div className="relative overflow-hidden rounded-lg border bg-muted">
-                  <img
-                    src={heroImageUrl}
-                    alt="Hero preview"
-                    className="h-64 w-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {!heroImageUrl && (
-              <div className="flex h-48 items-center justify-center rounded-lg border border-dashed bg-muted/50">
-                <div className="text-center">
-                  <ImageIcon className="mx-auto size-10 text-muted-foreground opacity-40" />
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    No hero image set — a gradient placeholder will be shown
-                  </p>
-                </div>
-              </div>
-            )}
+            <FileUpload
+              imageOnly
+              maxSizeMB={5}
+              folder="site/hero"
+              currentUrl={heroImageUrl || null}
+              onUpload={(url) => setHeroImageUrl(url)}
+              onRemove={() => setHeroImageUrl("")}
+              description="Upload a high-quality, eye-catching image. Recommended size: 800×600px or larger."
+              disabled={saving}
+            />
           </CardContent>
         </Card>
 
@@ -204,59 +160,16 @@ export default function LandingPageAdmin() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="featuredImageUrl">Image URL</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="featuredImageUrl"
-                  placeholder="https://images.unsplash.com/..."
-                  value={featuredImageUrl}
-                  onChange={(e) => setFeaturedImageUrl(e.target.value)}
-                />
-                {featuredImageUrl && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setFeaturedImageUrl("")}
-                    title="Clear"
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                )}
-              </div>
-              <p className="text-muted-foreground text-xs">
-                Paste a direct link to an image. You can use services like
-                Unsplash, Imgur, or any image hosting.
-              </p>
-            </div>
-
-            {/* Preview */}
-            {featuredImageUrl && (
-              <div className="space-y-2">
-                <Label className="text-muted-foreground text-xs">Preview</Label>
-                <div className="relative overflow-hidden rounded-lg border bg-muted">
-                  <img
-                    src={featuredImageUrl}
-                    alt="Featured preview"
-                    className="h-64 w-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {!featuredImageUrl && (
-              <div className="flex h-48 items-center justify-center rounded-lg border border-dashed bg-muted/50">
-                <div className="text-center">
-                  <ImageIcon className="mx-auto size-10 text-muted-foreground opacity-40" />
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    No featured image set — a gradient placeholder will be shown
-                  </p>
-                </div>
-              </div>
-            )}
+            <FileUpload
+              imageOnly
+              maxSizeMB={5}
+              folder="site/featured"
+              currentUrl={featuredImageUrl || null}
+              onUpload={(url) => setFeaturedImageUrl(url)}
+              onRemove={() => setFeaturedImageUrl("")}
+              description="Upload a screenshot or motivational visual. Recommended size: 700×500px or larger."
+              disabled={saving}
+            />
           </CardContent>
         </Card>
 

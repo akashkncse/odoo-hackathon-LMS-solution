@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { FileUpload } from "@/components/file-upload";
 import { X, Plus, Loader2, Tag } from "lucide-react";
 
 interface TagItem {
@@ -313,17 +314,17 @@ export function CourseForm({ mode, defaultValues }: CourseFormProps) {
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="imageUrl">Image URL</FieldLabel>
-              <Input
-                id="imageUrl"
-                type="url"
-                placeholder="https://example.com/course-image.jpg"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
+              <FieldLabel>Cover Image</FieldLabel>
+              <FileUpload
+                imageOnly
+                maxSizeMB={5}
+                folder="courses"
+                currentUrl={imageUrl || null}
+                onUpload={(url) => setImageUrl(url)}
+                onRemove={() => setImageUrl("")}
+                description="Upload a cover image for the course. Recommended size: 800×450px or larger."
+                disabled={loading || deleting}
               />
-              <FieldDescription>
-                A cover image for the course. Paste a URL to an image.
-              </FieldDescription>
             </Field>
 
             {/* Tags */}
