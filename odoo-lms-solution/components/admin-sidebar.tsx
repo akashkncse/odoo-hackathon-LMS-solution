@@ -4,6 +4,7 @@ import {
   BarChart3,
   BookOpen,
   LogOut,
+  PieChart,
   Settings,
   UserCircle,
   Users,
@@ -38,6 +39,11 @@ const navItems = [
     title: "My Courses",
     url: "/admin/courses",
     icon: BookOpen,
+  },
+  {
+    title: "Reporting",
+    url: "/admin/reporting",
+    icon: PieChart,
   },
   {
     title: "Profile",

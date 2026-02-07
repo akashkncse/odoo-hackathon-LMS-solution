@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import { useSearchParams } from "next/navigation";
 import { CourseForm } from "@/components/course-form";
 import { LessonList } from "@/components/lesson-list";
 import { QuizEditor } from "@/components/quiz-editor";
+import { ParticipantsTable } from "@/components/participants-table";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, ListOrdered, HelpCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  ListOrdered,
+  HelpCircle,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 
 interface CourseTag {
@@ -26,7 +34,7 @@ interface Course {
   tags?: CourseTag[];
 }
 
-type Tab = "details" | "lessons" | "quizzes";
+type Tab = "details" | "lessons" | "quizzes" | "participants";
 
 export default function EditCoursePage({
   params,
@@ -34,10 +42,21 @@ export default function EditCoursePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
+
   const [course, setCourse] = useState<Course | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>("details");
+  const [activeTab, setActiveTab] = useState<Tab>(
+    tabFromUrl === "participants"
+      ? "participants"
+      : tabFromUrl === "quizzes"
+        ? "quizzes"
+        : tabFromUrl === "lessons"
+          ? "lessons"
+          : "details",
+  );
 
   useEffect(() => {
     async function fetchCourse() {
@@ -61,9 +80,20 @@ export default function EditCoursePage({
     fetchCourse();
   }, [id]);
 
+  // Sync tab from URL when searchParams change
+  useEffect(() => {
+    if (tabFromUrl === "participants") {
+      setActiveTab("participants");
+    } else if (tabFromUrl === "quizzes") {
+      setActiveTab("quizzes");
+    } else if (tabFromUrl === "lessons") {
+      setActiveTab("lessons");
+    }
+  }, [tabFromUrl]);
+
   if (loading) {
     return (
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-5xl">
         <p className="text-muted-foreground">Loading course...</p>
       </div>
     );
@@ -71,7 +101,7 @@ export default function EditCoursePage({
 
   if (error || !course) {
     return (
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-5xl">
         <p className="text-destructive">{error || "Course not found."}</p>
         <Button asChild variant="outline" className="mt-4">
           <Link href="/admin/courses">
@@ -99,10 +129,17 @@ export default function EditCoursePage({
       label: "Quizzes",
       icon: <HelpCircle className="size-4" />,
     },
+    {
+      key: "participants",
+      label: "Participants",
+      icon: <Users className="size-4" />,
+    },
   ];
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div
+      className={`mx-auto ${activeTab === "participants" ? "max-w-6xl" : "max-w-4xl"}`}
+    >
       {/* Header */}
       <div className="mb-6">
         <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
@@ -113,17 +150,17 @@ export default function EditCoursePage({
         </Button>
         <h1 className="text-2xl font-bold truncate">{course.title}</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Manage course details, lessons, and quizzes.
+          Manage course details, lessons, quizzes, and participants.
         </p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex items-center gap-1 mb-6">
+      <div className="flex items-center gap-1 mb-6 overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+            className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
               activeTab === tab.key
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -160,6 +197,10 @@ export default function EditCoursePage({
       {activeTab === "lessons" && <LessonList courseId={course.id} />}
 
       {activeTab === "quizzes" && <QuizEditor courseId={course.id} />}
+
+      {activeTab === "participants" && (
+        <ParticipantsTable courseId={course.id} />
+      )}
     </div>
   );
 }
