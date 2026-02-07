@@ -35,6 +35,10 @@ export const lessonProgressStatusEnum = pgEnum("lesson_progress_status", [
   "in_progress",
   "completed",
 ]);
+export const invitationStatusEnum = pgEnum("invitation_status", [
+  "pending",
+  "accepted",
+]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -212,4 +216,37 @@ export const quizResponses = pgTable("quiz_responses", {
     .notNull()
     .references(() => quizOptions.id),
   isCorrect: boolean("is_correct").notNull(),
+});
+
+export const reviews = pgTable("reviews", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  courseId: uuid("course_id")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }),
+  rating: integer("rating").notNull(),
+  reviewText: text("review_text"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const courseInvitations = pgTable("course_invitations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  courseId: uuid("course_id")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }),
+  email: varchar("email", { length: 255 }).notNull(),
+  invitedBy: uuid("invited_by")
+    .notNull()
+    .references(() => users.id),
+  status: invitationStatusEnum("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const badgeLevels = pgTable("badge_levels", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  minPoints: integer("min_points").notNull(),
+  sortOrder: integer("sort_order").notNull(),
 });
