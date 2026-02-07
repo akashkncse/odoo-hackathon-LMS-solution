@@ -93,7 +93,7 @@ export const lessons = pgTable("lessons", {
   description: text("description"),
   sortOrder: integer("sort_order").notNull().default(0),
   responsibleId: uuid("responsible_id").references(() => users.id),
-  quizId: uuid("quiz_id"),
+  quizId: uuid("quiz_id").references(() => quizzes.id),
   videoUrl: varchar("video_url", { length: 500 }),
   videoDuration: integer("video_duration"),
   fileUrl: varchar("file_url", { length: 500 }),
@@ -112,4 +112,38 @@ export const lessonAttachments = pgTable("lesson_attachments", {
   linkUrl: varchar("link_url", { length: 500 }),
   name: varchar("name", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const quizzes = pgTable("quizzes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  courseId: uuid("course_id")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  firstTryPoints: integer("first_try_points").notNull().default(10),
+  secondTryPoints: integer("second_try_points").notNull().default(7),
+  thirdTryPoints: integer("third_try_points").notNull().default(5),
+  fourthPlusPoints: integer("fourth_plus_points").notNull().default(2),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const quizQuestions = pgTable("quiz_questions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  quizId: uuid("quiz_id")
+    .notNull()
+    .references(() => quizzes.id, { onDelete: "cascade" }),
+  questionText: text("question_text").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const quizOptions = pgTable("quiz_options", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  questionId: uuid("question_id")
+    .notNull()
+    .references(() => quizQuestions.id, { onDelete: "cascade" }),
+  optionText: varchar("option_text", { length: 500 }).notNull(),
+  isCorrect: boolean("is_correct").notNull().default(false),
+  sortOrder: integer("sort_order").notNull().default(0),
 });
