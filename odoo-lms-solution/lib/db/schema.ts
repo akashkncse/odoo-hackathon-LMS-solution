@@ -25,6 +25,16 @@ export const lessonTypeEnum = pgEnum("lesson_type", [
   "quiz",
 ]);
 export const attachmentTypeEnum = pgEnum("attachment_type", ["file", "link"]);
+export const enrollmentStatusEnum = pgEnum("enrollment_status", [
+  "not_started",
+  "in_progress",
+  "completed",
+]);
+export const lessonProgressStatusEnum = pgEnum("lesson_progress_status", [
+  "not_started",
+  "in_progress",
+  "completed",
+]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -146,4 +156,60 @@ export const quizOptions = pgTable("quiz_options", {
   optionText: varchar("option_text", { length: 500 }).notNull(),
   isCorrect: boolean("is_correct").notNull().default(false),
   sortOrder: integer("sort_order").notNull().default(0),
+});
+export const enrollments = pgTable("enrollments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  courseId: uuid("course_id")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }),
+  status: enrollmentStatusEnum("status").notNull().default("not_started"),
+  enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  timeSpentSeconds: integer("time_spent_seconds").notNull().default(0),
+});
+
+export const lessonProgress = pgTable("lesson_progress", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  lessonId: uuid("lesson_id")
+    .notNull()
+    .references(() => lessons.id, { onDelete: "cascade" }),
+  status: lessonProgressStatusEnum("status").notNull().default("not_started"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+});
+
+export const quizAttempts = pgTable("quiz_attempts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  quizId: uuid("quiz_id")
+    .notNull()
+    .references(() => quizzes.id, { onDelete: "cascade" }),
+  attemptNumber: integer("attempt_number").notNull(),
+  score: integer("score").notNull().default(0),
+  pointsEarned: integer("points_earned").notNull().default(0),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const quizResponses = pgTable("quiz_responses", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  attemptId: uuid("attempt_id")
+    .notNull()
+    .references(() => quizAttempts.id, { onDelete: "cascade" }),
+  questionId: uuid("question_id")
+    .notNull()
+    .references(() => quizQuestions.id),
+  selectedOptionId: uuid("selected_option_id")
+    .notNull()
+    .references(() => quizOptions.id),
+  isCorrect: boolean("is_correct").notNull(),
 });
