@@ -6,6 +6,7 @@ import { CourseForm } from "@/components/course-form";
 import { LessonList } from "@/components/lesson-list";
 import { QuizEditor } from "@/components/quiz-editor";
 import { ParticipantsTable } from "@/components/participants-table";
+import { InvitationsManager } from "@/components/invitations-manager";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +15,7 @@ import {
   ListOrdered,
   HelpCircle,
   Users,
+  Mail,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -34,7 +36,7 @@ interface Course {
   tags?: CourseTag[];
 }
 
-type Tab = "details" | "lessons" | "quizzes" | "participants";
+type Tab = "details" | "lessons" | "quizzes" | "participants" | "invitations";
 
 export default function EditCoursePage({
   params,
@@ -49,13 +51,15 @@ export default function EditCoursePage({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>(
-    tabFromUrl === "participants"
-      ? "participants"
-      : tabFromUrl === "quizzes"
-        ? "quizzes"
-        : tabFromUrl === "lessons"
-          ? "lessons"
-          : "details",
+    tabFromUrl === "invitations"
+      ? "invitations"
+      : tabFromUrl === "participants"
+        ? "participants"
+        : tabFromUrl === "quizzes"
+          ? "quizzes"
+          : tabFromUrl === "lessons"
+            ? "lessons"
+            : "details",
   );
 
   useEffect(() => {
@@ -82,7 +86,9 @@ export default function EditCoursePage({
 
   // Sync tab from URL when searchParams change
   useEffect(() => {
-    if (tabFromUrl === "participants") {
+    if (tabFromUrl === "invitations") {
+      setActiveTab("invitations");
+    } else if (tabFromUrl === "participants") {
       setActiveTab("participants");
     } else if (tabFromUrl === "quizzes") {
       setActiveTab("quizzes");
@@ -134,11 +140,16 @@ export default function EditCoursePage({
       label: "Participants",
       icon: <Users className="size-4" />,
     },
+    {
+      key: "invitations",
+      label: "Invitations",
+      icon: <Mail className="size-4" />,
+    },
   ];
 
   return (
     <div
-      className={`mx-auto ${activeTab === "participants" ? "max-w-6xl" : "max-w-4xl"}`}
+      className={`mx-auto ${activeTab === "participants" || activeTab === "invitations" ? "max-w-6xl" : "max-w-4xl"}`}
     >
       {/* Header */}
       <div className="mb-6">
@@ -200,6 +211,10 @@ export default function EditCoursePage({
 
       {activeTab === "participants" && (
         <ParticipantsTable courseId={course.id} />
+      )}
+
+      {activeTab === "invitations" && (
+        <InvitationsManager courseId={course.id} />
       )}
     </div>
   );

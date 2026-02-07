@@ -4,12 +4,13 @@ import {
   BookOpen,
   GraduationCap,
   LogOut,
+  Mail,
   Trophy,
   UserCircle,
 } from "lucide-react";
 import { useBranding } from "@/hooks/use-branding";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -26,6 +27,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { Badge } from "@/components/ui/badge";
 
 const navItems = [
   {
@@ -37,6 +39,11 @@ const navItems = [
     title: "My Learning",
     url: "/dashboard/my-learning",
     icon: GraduationCap,
+  },
+  {
+    title: "Invitations",
+    url: "/dashboard/invitations",
+    icon: Mail,
   },
   {
     title: "My Points",
@@ -55,6 +62,26 @@ export function LearnerSidebar() {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const { platformName, logoUrl } = useBranding();
+  const [pendingInvitationCount, setPendingInvitationCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchPendingCount() {
+      try {
+        const res = await fetch("/api/invitations");
+        if (res.ok) {
+          const data = await res.json();
+          setPendingInvitationCount(data.invitations?.length ?? 0);
+        }
+      } catch {
+        // silently ignore
+      }
+    }
+    fetchPendingCount();
+
+    // Refresh count periodically (every 60 seconds)
+    const interval = setInterval(fetchPendingCount, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -112,7 +139,18 @@ export function LearnerSidebar() {
                   >
                     <Link href={item.url}>
                       <item.icon />
-                      <span>{item.title}</span>
+                      <span className="flex-1">{item.title}</span>
+                      {item.title === "Invitations" &&
+                        pendingInvitationCount > 0 && (
+                          <Badge
+                            variant="destructive"
+                            className="ml-auto h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold"
+                          >
+                            {pendingInvitationCount > 99
+                              ? "99+"
+                              : pendingInvitationCount}
+                          </Badge>
+                        )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
