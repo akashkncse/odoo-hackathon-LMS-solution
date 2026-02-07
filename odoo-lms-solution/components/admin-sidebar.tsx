@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, LayoutDashboard } from "lucide-react";
+import { BarChart3, BookOpen, LayoutDashboard, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -20,6 +20,11 @@ import {
 
 const navItems = [
   {
+    title: "Dashboard",
+    url: "/admin",
+    icon: BarChart3,
+  },
+  {
     title: "My Courses",
     url: "/admin/courses",
     icon: BookOpen,
@@ -27,6 +32,11 @@ const navItems = [
 ];
 
 const superadminItems = [
+  {
+    title: "Users",
+    url: "/admin/users",
+    icon: Users,
+  },
   {
     title: "Landing Page",
     url: "/admin/landing-page",
@@ -85,7 +95,11 @@ export function AdminSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname.startsWith(item.url)}
+                    isActive={
+                      item.url === "/admin"
+                        ? pathname === "/admin"
+                        : pathname.startsWith(item.url)
+                    }
                   >
                     <Link href={item.url}>
                       <item.icon />

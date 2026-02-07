@@ -36,6 +36,16 @@ export async function POST(request: Request) {
       );
     }
 
+    if (user.isActive === false) {
+      return NextResponse.json(
+        {
+          error:
+            "Your account has been deactivated. Please contact an administrator.",
+        },
+        { status: 403 },
+      );
+    }
+
     await createSession(user.id);
 
     return NextResponse.json({

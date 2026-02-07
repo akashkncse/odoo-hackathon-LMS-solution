@@ -63,12 +63,19 @@ export async function getSession() {
       email: users.email,
       role: users.role,
       avatarUrl: users.avatarUrl,
+      isActive: users.isActive,
       totalPoints: users.totalPoints,
     })
     .from(users)
     .where(eq(users.id, session.userId));
 
   if (!user) return null;
+
+  // Block deactivated users — treat as if no session exists
+  if (user.isActive === false) {
+    await db.delete(sessions).where(eq(sessions.id, session.id));
+    return null;
+  }
 
   return { session, user };
 }
