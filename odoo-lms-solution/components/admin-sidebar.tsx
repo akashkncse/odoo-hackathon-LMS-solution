@@ -3,6 +3,7 @@
 import {
   BarChart3,
   BookOpen,
+  CreditCard,
   LogOut,
   PieChart,
   Settings,
@@ -44,6 +45,11 @@ const navItems = [
     title: "Reporting",
     url: "/admin/reporting",
     icon: PieChart,
+  },
+  {
+    title: "Payments",
+    url: "/admin/payments",
+    icon: CreditCard,
   },
   {
     title: "Profile",

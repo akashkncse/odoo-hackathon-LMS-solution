@@ -170,10 +170,14 @@ export function CourseForm({ mode, defaultValues }: CourseFormProps) {
       return;
     }
 
-    if (accessRule === "payment" && price) {
+    if (accessRule === "payment") {
+      if (!price || price.toString().trim() === "") {
+        setError("Price is required for paid courses.");
+        return;
+      }
       const parsed = parseFloat(price);
-      if (isNaN(parsed) || parsed < 0) {
-        setError("Price must be a non-negative number.");
+      if (isNaN(parsed) || parsed <= 0) {
+        setError("Amount must be greater than 0.");
         return;
       }
     }
@@ -493,14 +497,15 @@ export function CourseForm({ mode, defaultValues }: CourseFormProps) {
                 <Input
                   id="price"
                   type="number"
-                  min="0"
+                  min="0.01"
                   step="0.01"
-                  placeholder="29.99"
+                  placeholder="499.00"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
+                  required
                 />
                 <FieldDescription>
-                  Set the price for this course. Leave empty for free.
+                  Set the price for this course. Amount must be greater than 0.
                 </FieldDescription>
               </Field>
             )}

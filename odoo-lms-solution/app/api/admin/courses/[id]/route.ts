@@ -205,6 +205,20 @@ export async function PATCH(
       }
     }
 
+    // When access rule is "payment", price must be greater than 0
+    const effectiveAccessRule = updates.accessRule ?? existing.accessRule;
+    const effectivePrice =
+      updates.price !== undefined ? updates.price : existing.price;
+    if (effectiveAccessRule === "payment") {
+      const priceNum = effectivePrice ? parseFloat(String(effectivePrice)) : 0;
+      if (!priceNum || priceNum <= 0) {
+        return NextResponse.json(
+          { error: "Amount must be greater than 0 for paid courses" },
+          { status: 400 },
+        );
+      }
+    }
+
     if (published !== undefined) {
       if (typeof published !== "boolean") {
         return NextResponse.json(

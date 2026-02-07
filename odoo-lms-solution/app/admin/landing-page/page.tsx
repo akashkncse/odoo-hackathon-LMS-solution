@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/card";
 import { FileUpload } from "@/components/file-upload";
 import { invalidateBrandingCache } from "@/hooks/use-branding";
+import { invalidateCurrencyCache } from "@/hooks/use-currency";
+import { CURRENCY_LIST } from "@/lib/currency";
 import {
   ImageIcon,
   Save,
@@ -20,6 +22,8 @@ import {
   Eye,
   Palette,
   Type,
+  Coins,
+  Search,
 } from "lucide-react";
 
 interface SiteSettings {
@@ -28,6 +32,7 @@ interface SiteSettings {
   logoUrl: string | null;
   heroImageUrl: string | null;
   featuredImageUrl: string | null;
+  currency: string | null;
 }
 
 export default function SiteSettingsAdmin() {
@@ -37,11 +42,15 @@ export default function SiteSettingsAdmin() {
     logoUrl: null,
     heroImageUrl: null,
     featuredImageUrl: null,
+    currency: null,
   });
   const [platformName, setPlatformName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [heroImageUrl, setHeroImageUrl] = useState("");
   const [featuredImageUrl, setFeaturedImageUrl] = useState("");
+  const [currency, setCurrency] = useState("INR");
+  const [currencySearch, setCurrencySearch] = useState("");
+  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -62,6 +71,7 @@ export default function SiteSettingsAdmin() {
         setLogoUrl(data.settings.logoUrl || "");
         setHeroImageUrl(data.settings.heroImageUrl || "");
         setFeaturedImageUrl(data.settings.featuredImageUrl || "");
+        setCurrency(data.settings.currency || "INR");
       } catch {
         setError("Something went wrong. Try again.");
       } finally {
@@ -85,6 +95,7 @@ export default function SiteSettingsAdmin() {
           logoUrl: logoUrl.trim() || null,
           heroImageUrl: heroImageUrl.trim() || null,
           featuredImageUrl: featuredImageUrl.trim() || null,
+          currency: currency || "INR",
         }),
       });
 
@@ -96,8 +107,9 @@ export default function SiteSettingsAdmin() {
       }
 
       setSettings(data.settings);
-      // Invalidate branding cache so sidebars and other components pick up the changes
+      // Invalidate branding & currency cache so all components pick up the changes
       invalidateBrandingCache();
+      invalidateCurrencyCache();
       toast.success("Site settings saved successfully!");
     } catch {
       toast.error("Failed to save settings. Try again.");
@@ -230,6 +242,143 @@ export default function SiteSettingsAdmin() {
                 )}
                 <span className="text-lg font-bold tracking-tight">
                   {platformName.trim() || "LearnHub"}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── Payments & Currency ──────────────────────────────────── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Coins className="size-5" />
+              Payments &amp; Currency
+            </CardTitle>
+            <CardDescription>
+              Set the platform currency. This currency is used across the entire
+              site — course prices, payment checkout, invoices, and reports.
+              Changing this does not convert existing prices; it only changes
+              the display symbol.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label
+                htmlFor="currency"
+                className="text-sm font-medium flex items-center gap-1.5"
+              >
+                <Coins className="size-3.5 text-muted-foreground" />
+                Currency
+              </label>
+
+              {/* Currency selector with search */}
+              <div className="relative">
+                <div
+                  className="border-input bg-transparent focus-within:border-ring focus-within:ring-ring/50 flex h-9 w-full items-center rounded-md border px-3 text-sm shadow-xs focus-within:ring-[3px] cursor-pointer"
+                  onClick={() => setShowCurrencyDropdown((v) => !v)}
+                >
+                  {(() => {
+                    const selected = CURRENCY_LIST.find(
+                      (c) => c.code === currency,
+                    );
+                    if (selected) {
+                      return (
+                        <span>
+                          {selected.symbol} — {selected.name} ({selected.code})
+                        </span>
+                      );
+                    }
+                    return (
+                      <span className="text-muted-foreground">
+                        Select currency...
+                      </span>
+                    );
+                  })()}
+                </div>
+
+                {showCurrencyDropdown && (
+                  <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg">
+                    <div className="flex items-center gap-2 border-b px-3 py-2">
+                      <Search className="size-4 text-muted-foreground shrink-0" />
+                      <input
+                        type="text"
+                        className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                        placeholder="Search currencies..."
+                        value={currencySearch}
+                        onChange={(e) => setCurrencySearch(e.target.value)}
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    <div className="max-h-60 overflow-y-auto p-1">
+                      {CURRENCY_LIST.filter((c) => {
+                        if (!currencySearch.trim()) return true;
+                        const q = currencySearch.toLowerCase();
+                        return (
+                          c.code.toLowerCase().includes(q) ||
+                          c.name.toLowerCase().includes(q) ||
+                          c.symbol.includes(q)
+                        );
+                      }).map((c) => (
+                        <button
+                          key={c.code}
+                          type="button"
+                          className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground ${
+                            currency === c.code
+                              ? "bg-accent text-accent-foreground font-medium"
+                              : ""
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrency(c.code);
+                            setCurrencySearch("");
+                            setShowCurrencyDropdown(false);
+                          }}
+                        >
+                          <span className="w-8 text-center font-medium">
+                            {c.symbol}
+                          </span>
+                          <span className="flex-1 text-left">{c.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {c.code}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                This currency symbol will be shown next to every price across
+                the platform. Default is Indian Rupee (₹).
+              </p>
+            </div>
+
+            {/* Live preview */}
+            <div className="rounded-lg border bg-muted/30 p-4">
+              <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">
+                Price Preview
+              </p>
+              <div className="flex items-center gap-4">
+                {(() => {
+                  const selected = CURRENCY_LIST.find(
+                    (c) => c.code === currency,
+                  );
+                  const sym = selected?.symbol ?? currency;
+                  const decimals = selected?.decimals ?? 2;
+                  const samplePrice = (499).toFixed(decimals);
+                  const formattedPrice =
+                    selected?.symbolFirst !== false
+                      ? `${sym}${samplePrice}`
+                      : `${samplePrice} ${sym}`;
+                  return (
+                    <span className="text-2xl font-bold">{formattedPrice}</span>
+                  );
+                })()}
+                <span className="text-sm text-muted-foreground">
+                  (sample course price)
                 </span>
               </div>
             </div>

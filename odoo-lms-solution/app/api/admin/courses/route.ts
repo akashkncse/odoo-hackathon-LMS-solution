@@ -86,7 +86,21 @@ export async function POST(request: Request) {
       );
     }
 
-    if (price !== undefined && price !== null) {
+    if (accessRule === "payment") {
+      if (price === undefined || price === null || price === "") {
+        return NextResponse.json(
+          { error: "Price is required for paid courses" },
+          { status: 400 },
+        );
+      }
+      const parsed = parseFloat(price);
+      if (isNaN(parsed) || parsed <= 0) {
+        return NextResponse.json(
+          { error: "Amount must be greater than 0" },
+          { status: 400 },
+        );
+      }
+    } else if (price !== undefined && price !== null && price !== "") {
       const parsed = parseFloat(price);
       if (isNaN(parsed) || parsed < 0) {
         return NextResponse.json(

@@ -25,6 +25,13 @@ export const lessonTypeEnum = pgEnum("lesson_type", [
   "quiz",
 ]);
 export const attachmentTypeEnum = pgEnum("attachment_type", ["file", "link"]);
+export const paymentStatusEnum = pgEnum("payment_status", [
+  "pending",
+  "completed",
+  "failed",
+  "refunded",
+]);
+
 export const enrollmentStatusEnum = pgEnum("enrollment_status", [
   "not_started",
   "in_progress",
@@ -275,5 +282,24 @@ export const siteSettings = pgTable("site_settings", {
   logoUrl: varchar("logo_url", { length: 500 }),
   heroImageUrl: varchar("hero_image_url", { length: 500 }),
   featuredImageUrl: varchar("featured_image_url", { length: 500 }),
+  currency: varchar("currency", { length: 10 }).default("INR"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const payments = pgTable("payments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  courseId: uuid("course_id")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }),
+  razorpayOrderId: varchar("razorpay_order_id", { length: 255 }).notNull(),
+  razorpayPaymentId: varchar("razorpay_payment_id", { length: 255 }),
+  razorpaySignature: varchar("razorpay_signature", { length: 500 }),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 10 }).notNull().default("INR"),
+  status: paymentStatusEnum("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

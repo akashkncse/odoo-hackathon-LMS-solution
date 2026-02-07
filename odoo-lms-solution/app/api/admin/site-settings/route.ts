@@ -26,6 +26,7 @@ export async function GET() {
           logoUrl: null,
           heroImageUrl: null,
           featuredImageUrl: null,
+          currency: "INR",
         },
       });
     }
@@ -53,7 +54,8 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { platformName, logoUrl, heroImageUrl, featuredImageUrl } = body;
+    const { platformName, logoUrl, heroImageUrl, featuredImageUrl, currency } =
+      body;
 
     const updates: Record<string, unknown> = {};
 
@@ -124,6 +126,22 @@ export async function PATCH(request: Request) {
       updates.featuredImageUrl = featuredImageUrl || null;
     }
 
+    if (currency !== undefined) {
+      if (currency !== null && typeof currency !== "string") {
+        return NextResponse.json(
+          { error: "currency must be a string or null" },
+          { status: 400 },
+        );
+      }
+      if (typeof currency === "string" && currency.length > 10) {
+        return NextResponse.json(
+          { error: "currency must be 10 characters or less" },
+          { status: 400 },
+        );
+      }
+      updates.currency = currency?.trim().toUpperCase() || "INR";
+    }
+
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(
         { error: "No fields to update" },
@@ -147,6 +165,7 @@ export async function PATCH(request: Request) {
           logoUrl: (updates.logoUrl as string | null) ?? null,
           heroImageUrl: (updates.heroImageUrl as string | null) ?? null,
           featuredImageUrl: (updates.featuredImageUrl as string | null) ?? null,
+          currency: (updates.currency as string | null) ?? "INR",
           updatedAt: updates.updatedAt as Date,
         })
         .returning();

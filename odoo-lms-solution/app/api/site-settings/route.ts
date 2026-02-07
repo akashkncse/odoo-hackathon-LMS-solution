@@ -13,6 +13,7 @@ export async function GET() {
           logoUrl: null,
           heroImageUrl: null,
           featuredImageUrl: null,
+          currency: "INR",
         },
       });
     }
@@ -25,6 +26,7 @@ export async function GET() {
         logoUrl: settings.logoUrl,
         heroImageUrl: settings.heroImageUrl,
         featuredImageUrl: settings.featuredImageUrl,
+        currency: settings.currency || "INR",
       },
     });
   } catch (error) {

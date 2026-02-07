@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useCurrency } from "@/hooks/use-currency";
 
 interface Course {
   id: string;
@@ -29,6 +30,7 @@ export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { formatPrice } = useCurrency();
 
   useEffect(() => {
     async function fetchCourses() {
@@ -162,7 +164,7 @@ export default function CoursesPage() {
                     <div className="flex items-center justify-between">
                       <span>Price</span>
                       <span className="font-medium text-foreground">
-                        ${parseFloat(course.price).toFixed(2)}
+                        {formatPrice(course.price)}
                       </span>
                     </div>
                   )}

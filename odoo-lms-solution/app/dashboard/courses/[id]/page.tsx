@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, use } from "react";
+import { useEffect, useRef, useState, use, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,10 +25,34 @@ import {
   Star,
   Award,
   Linkedin,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import ReviewsSection from "@/components/reviews-section";
+import { useCurrency } from "@/hooks/use-currency";
+
+/**
+ * Dynamically load the Razorpay checkout script.
+ * Returns a promise that resolves when the script is ready.
+ */
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve(false);
+      return;
+    }
+    if ((window as unknown as Record<string, unknown>).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 interface Course {
   id: string;
@@ -197,12 +222,15 @@ export default function CourseDetailPage({
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
+  const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
   const viewTracked = useRef(false);
   // Dashboard routes are behind auth middleware, so user is always logged in here
   const isLoggedIn = true;
+  const { formatPrice } = useCurrency();
 
   // Track view count exactly once per page visit
   useEffect(() => {
@@ -272,6 +300,125 @@ export default function CourseDetailPage({
       setEnrolling(false);
     }
   }
+
+  const handlePayment = useCallback(async () => {
+    if (!course) return;
+
+    setPaying(true);
+
+    try {
+      // 1. Create an order on our server
+      const res = await fetch("/api/payments/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseId: id }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Failed to initiate payment.");
+        setPaying(false);
+        return;
+      }
+
+      // 2. If test mode, redirect to the test checkout page
+      if (data.testMode) {
+        const params = new URLSearchParams({
+          paymentId: data.paymentId,
+          orderId: data.orderId,
+          amount: String(data.amount),
+          currency: data.currency,
+          courseName: data.courseName,
+        });
+        router.push(`/dashboard/courses/${id}/checkout?${params.toString()}`);
+        return;
+      }
+
+      // 3. Live mode — load Razorpay checkout script
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        toast.error("Failed to load payment gateway. Please try again.");
+        setPaying(false);
+        return;
+      }
+
+      // 4. Open the Razorpay checkout modal
+      const options = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
+        name: data.courseName,
+        description: `Enroll in ${data.courseName}`,
+        order_id: data.orderId,
+        prefill: data.prefill,
+        theme: {
+          color: "#6366f1",
+        },
+        handler: async (response: {
+          razorpay_order_id: string;
+          razorpay_payment_id: string;
+          razorpay_signature: string;
+        }) => {
+          // 5. Verify the payment on our server
+          try {
+            const verifyRes = await fetch("/api/payments/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                paymentId: data.paymentId,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (!verifyRes.ok) {
+              toast.error(verifyData.error || "Payment verification failed.");
+              setPaying(false);
+              return;
+            }
+
+            // 6. Payment successful — update UI
+            setEnrollment(verifyData.enrollment);
+            setProgress({
+              completedLessons: 0,
+              totalLessons: lessons.length,
+              percentComplete: 0,
+              lessonStatuses: Object.fromEntries(
+                lessons.map((l) => [l.id, "not_started" as const]),
+              ),
+            });
+
+            toast.success("Payment successful! 🎉", {
+              description: "You now have full access to this course.",
+            });
+          } catch {
+            toast.error(
+              "Payment was processed but verification failed. Please contact support.",
+            );
+          } finally {
+            setPaying(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setPaying(false);
+          },
+        },
+      };
+
+      const RazorpayConstructor = (window as unknown as Record<string, unknown>)
+        .Razorpay as new (opts: typeof options) => { open: () => void };
+      const rzp = new RazorpayConstructor(options);
+      rzp.open();
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+      setPaying(false);
+    }
+  }, [course, id, lessons, router]);
 
   if (loading) {
     return (
@@ -364,7 +511,7 @@ export default function CourseDetailPage({
             )}
             {course.accessRule === "payment" && course.price && (
               <span className="font-semibold text-white">
-                ${parseFloat(course.price).toFixed(2)}
+                {formatPrice(course.price)}
               </span>
             )}
           </div>
@@ -711,7 +858,7 @@ export default function CourseDetailPage({
                         {course.accessRule === "payment" && course.price ? (
                           <div className="text-center">
                             <span className="text-3xl font-bold">
-                              ${parseFloat(course.price).toFixed(2)}
+                              {formatPrice(course.price)}
                             </span>
                           </div>
                         ) : course.accessRule === "open" ? (
@@ -726,25 +873,39 @@ export default function CourseDetailPage({
                           </div>
                         )}
 
-                        <Button
-                          onClick={handleEnroll}
-                          disabled={enrolling}
-                          className="w-full"
-                          size="lg"
-                        >
-                          {enrolling
-                            ? "Enrolling..."
-                            : course.accessRule === "payment"
-                              ? "Buy Course"
-                              : "Enroll for Free"}
-                        </Button>
+                        {course.accessRule === "payment" ? (
+                          <Button
+                            onClick={handlePayment}
+                            disabled={paying || enrolling}
+                            className="w-full"
+                            size="lg"
+                          >
+                            {paying ? (
+                              <>
+                                <Loader2 className="size-4 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              `Buy Course — ${formatPrice(course.price!)}`
+                            )}
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={handleEnroll}
+                            disabled={enrolling}
+                            className="w-full"
+                            size="lg"
+                          >
+                            {enrolling ? "Enrolling..." : "Enroll for Free"}
+                          </Button>
+                        )}
 
                         <p className="text-muted-foreground text-xs text-center">
                           {course.accessRule === "open"
                             ? "Instant access after enrollment."
                             : course.accessRule === "invitation"
                               ? "You'll be enrolled if you have a valid invitation."
-                              : "Payment processing coming soon."}
+                              : "Secure payment powered by Razorpay."}
                         </p>
                       </>
                     )}

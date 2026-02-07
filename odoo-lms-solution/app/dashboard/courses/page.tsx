@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useCurrency } from "@/hooks/use-currency";
 import {
   Card,
   CardContent,
@@ -62,6 +63,7 @@ interface Pagination {
 }
 
 export default function BrowseCoursesPage() {
+  const { formatPrice } = useCurrency();
   const [courses, setCourses] = useState<Course[]>([]);
   const [allTags, setAllTags] = useState<CourseTag[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
@@ -423,7 +425,7 @@ export default function BrowseCoursesPage() {
                     </div>
                     {course.accessRule === "payment" && course.price && (
                       <span className="text-foreground font-semibold">
-                        ${parseFloat(course.price).toFixed(2)}
+                        {formatPrice(course.price)}
                       </span>
                     )}
                   </div>

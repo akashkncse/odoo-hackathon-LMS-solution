@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useCurrency } from "@/hooks/use-currency";
 import {
   Card,
   CardContent,
@@ -248,6 +249,7 @@ export default function ReportingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedCourseId, setSelectedCourseId] = useState<string>("all");
+  const { formatPrice } = useCurrency();
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
@@ -515,7 +517,7 @@ export default function ReportingPage() {
                               variant="outline"
                               className="text-[10px] px-1.5 py-0"
                             >
-                              ${parseFloat(course.price).toFixed(2)}
+                              {formatPrice(course.price)}
                             </Badge>
                           )}
                           <span className="text-xs text-muted-foreground">
