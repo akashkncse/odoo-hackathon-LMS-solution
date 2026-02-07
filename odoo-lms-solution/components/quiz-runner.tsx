@@ -105,6 +105,7 @@ interface AttemptHistoryResponse {
 interface QuizRunnerProps {
   courseId: string;
   quizId: string;
+  onPerfectScore?: () => void;
 }
 
 // ─── Quiz States ─────────────────────────────────────────────────────────────
@@ -307,7 +308,11 @@ function AttemptHistory({
 
 // ─── Main Quiz Runner Component ──────────────────────────────────────────────
 
-export function QuizRunner({ courseId, quizId }: QuizRunnerProps) {
+export function QuizRunner({
+  courseId,
+  quizId,
+  onPerfectScore,
+}: QuizRunnerProps) {
   const [state, setState] = useState<QuizState>("loading");
   const [quiz, setQuiz] = useState<QuizData | null>(null);
   const [error, setError] = useState("");
@@ -446,6 +451,11 @@ export function QuizRunner({ courseId, quizId }: QuizRunnerProps) {
       setAttemptResult(data);
       setHistoryKey((prev) => prev + 1);
       setState("results");
+
+      // Notify parent when learner achieves a perfect score
+      if (data.summary?.scorePercent === 100 && onPerfectScore) {
+        onPerfectScore();
+      }
     } catch {
       setError("Something went wrong submitting the quiz.");
       setState("taking");

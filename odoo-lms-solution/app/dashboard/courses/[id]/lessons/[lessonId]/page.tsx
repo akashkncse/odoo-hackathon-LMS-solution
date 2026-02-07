@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -253,6 +254,7 @@ export default function LessonViewerPage({
   params: Promise<{ id: string; lessonId: string }>;
 }) {
   const { id: courseId, lessonId } = use(params);
+  const router = useRouter();
 
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [course, setCourse] = useState<CourseInfo | null>(null);
@@ -260,7 +262,7 @@ export default function LessonViewerPage({
   const [navigation, setNavigation] = useState<NavigationInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [completing, setCompleting] = useState(false);
+  const [navigating, setNavigating] = useState(false);
 
   useEffect(() => {
     async function fetchLesson() {
@@ -289,8 +291,10 @@ export default function LessonViewerPage({
     fetchLesson();
   }, [courseId, lessonId]);
 
-  async function handleMarkComplete() {
-    setCompleting(true);
+  // Mark the current lesson as completed via the progress API
+  const markAsComplete = useCallback(async () => {
+    if (progress?.status === "completed") return;
+
     try {
       const res = await fetch(
         `/api/courses/${courseId}/lessons/${lessonId}/progress`,
@@ -313,10 +317,26 @@ export default function LessonViewerPage({
         );
       }
     } catch {
-      // Silently fail — not critical
-    } finally {
-      setCompleting(false);
+      // Silently fail — navigation is more important than blocking on this
     }
+  }, [courseId, lessonId, progress?.status]);
+
+  // Called when clicking "Next" or "Finish Course"
+  // For non-quiz lessons: mark complete, then navigate
+  // For quiz lessons: just navigate (completion handled by onPerfectScore)
+  async function handleNext(destinationUrl: string) {
+    setNavigating(true);
+
+    if (lesson?.type !== "quiz" && progress?.status !== "completed") {
+      await markAsComplete();
+    }
+
+    router.push(destinationUrl);
+  }
+
+  // Called by QuizRunner when the learner scores 100%
+  function handleQuizPerfectScore() {
+    markAsComplete();
   }
 
   if (loading) {
@@ -424,7 +444,11 @@ export default function LessonViewerPage({
             allowDownload={lesson.allowDownload}
           />
         ) : lesson.type === "quiz" && lesson.quizId ? (
-          <QuizRunner courseId={courseId} quizId={lesson.quizId} />
+          <QuizRunner
+            courseId={courseId}
+            quizId={lesson.quizId}
+            onPerfectScore={handleQuizPerfectScore}
+          />
         ) : lesson.type === "quiz" && !lesson.quizId ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16">
             <HelpCircle className="size-12 text-muted-foreground/50 mb-3" />
@@ -440,29 +464,11 @@ export default function LessonViewerPage({
 
       <Separator className="mb-6" />
 
-      {/* Bottom actions: Mark Complete + Prev/Next */}
+      {/* Bottom: Completion status + Prev/Next navigation */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Mark Complete */}
+        {/* Completion status indicator (no manual button) */}
         <div>
-          {!isCompleted ? (
-            <Button
-              onClick={handleMarkComplete}
-              disabled={completing}
-              variant="outline"
-            >
-              {completing ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Marking...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="size-4" />
-                  Mark as Complete
-                </>
-              )}
-            </Button>
-          ) : (
+          {isCompleted ? (
             <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium">
               <CheckCircle2 className="size-4" />
               Lesson completed
@@ -477,6 +483,16 @@ export default function LessonViewerPage({
                 </span>
               )}
             </div>
+          ) : lesson.type === "quiz" ? (
+            <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+              <HelpCircle className="size-3.5" />
+              Score 100% on the quiz to complete this lesson
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+              <ArrowRight className="size-3.5" />
+              Press Next to mark this lesson as complete
+            </p>
           )}
         </div>
 
@@ -503,23 +519,42 @@ export default function LessonViewerPage({
             )}
 
             {navigation.nextLesson ? (
-              <Button asChild size="sm">
-                <Link
-                  href={`/dashboard/courses/${courseId}/lessons/${navigation.nextLesson.id}`}
-                >
-                  <span className="hidden sm:inline max-w-30 truncate">
-                    {navigation.nextLesson.title}
-                  </span>
-                  <span className="sm:hidden">Next</span>
-                  <ArrowRight className="size-4" />
-                </Link>
+              <Button
+                size="sm"
+                disabled={navigating}
+                onClick={() =>
+                  handleNext(
+                    `/dashboard/courses/${courseId}/lessons/${navigation.nextLesson!.id}`,
+                  )
+                }
+              >
+                {navigating ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <>
+                    <span className="hidden sm:inline max-w-30 truncate">
+                      {navigation.nextLesson.title}
+                    </span>
+                    <span className="sm:hidden">Next</span>
+                    <ArrowRight className="size-4" />
+                  </>
+                )}
               </Button>
             ) : (
-              <Button asChild size="sm" variant="outline">
-                <Link href={`/dashboard/courses/${courseId}`}>
-                  Finish Course
-                  <ArrowRight className="size-4" />
-                </Link>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={navigating}
+                onClick={() => handleNext(`/dashboard/courses/${courseId}`)}
+              >
+                {navigating ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <>
+                    Finish Course
+                    <ArrowRight className="size-4" />
+                  </>
+                )}
               </Button>
             )}
           </div>
