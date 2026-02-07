@@ -5,10 +5,14 @@ import {
   GraduationCap,
   LogOut,
   Mail,
+  Moon,
+  Sun,
   Trophy,
   UserCircle,
 } from "lucide-react";
 import { useBranding } from "@/hooks/use-branding";
+import { useMounted } from "@/hooks/use-mounted";
+import { useTheme } from "next-themes";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -62,6 +66,8 @@ export function LearnerSidebar() {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const { platformName, logoUrl } = useBranding();
+  const { theme, setTheme } = useTheme();
+  const mounted = useMounted();
   const [pendingInvitationCount, setPendingInvitationCount] = useState(0);
 
   useEffect(() => {
@@ -161,6 +167,26 @@ export function LearnerSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              tooltip={
+                theme === "dark"
+                  ? "Switch to light mode"
+                  : "Switch to dark mode"
+              }
+              className="text-muted-foreground hover:text-foreground"
+            >
+              {mounted && theme === "dark" ? (
+                <Sun className="size-4" />
+              ) : (
+                <Moon className="size-4" />
+              )}
+              <span>
+                {mounted && theme === "dark" ? "Light Mode" : "Dark Mode"}
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={handleLogout}

@@ -3,8 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
+import { useTheme } from "next-themes";
+import { useMounted } from "@/hooks/use-mounted";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, Menu, X } from "lucide-react";
+import { GraduationCap, Menu, Moon, Sun, X } from "lucide-react";
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -20,6 +22,8 @@ interface NavbarProps {
 
 export function Navbar({ platformName = "LearnHub", logoUrl }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const mounted = useMounted();
 
   return (
     <motion.header
@@ -62,8 +66,21 @@ export function Navbar({ platformName = "LearnHub", logoUrl }: NavbarProps) {
           ))}
         </nav>
 
-        {/* Desktop CTAs */}
-        <div className="hidden items-center gap-3 md:flex">
+        {/* Desktop CTAs + Theme Toggle */}
+        <div className="hidden items-center gap-2 md:flex">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-9 text-muted-foreground hover:text-foreground"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label="Toggle theme"
+          >
+            {mounted && theme === "dark" ? (
+              <Sun className="size-4" />
+            ) : (
+              <Moon className="size-4" />
+            )}
+          </Button>
           <Button variant="ghost" size="sm" asChild>
             <Link href="/login">Log in</Link>
           </Button>
@@ -73,15 +90,33 @@ export function Navbar({ platformName = "LearnHub", logoUrl }: NavbarProps) {
         </div>
 
         {/* Mobile toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-        </Button>
+        <div className="flex items-center gap-1 md:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-9 text-muted-foreground hover:text-foreground"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label="Toggle theme"
+          >
+            {mounted && theme === "dark" ? (
+              <Sun className="size-4" />
+            ) : (
+              <Moon className="size-4" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? (
+              <X className="size-5" />
+            ) : (
+              <Menu className="size-5" />
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
