@@ -250,3 +250,10 @@ export const badgeLevels = pgTable("badge_levels", {
   minPoints: integer("min_points").notNull(),
   sortOrder: integer("sort_order").notNull(),
 });
+
+export const siteSettings = pgTable("site_settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  heroImageUrl: varchar("hero_image_url", { length: 500 }),
+  featuredImageUrl: varchar("featured_image_url", { length: 500 }),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

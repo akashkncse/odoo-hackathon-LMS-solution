@@ -309,7 +309,7 @@ export default function PointsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total Points */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-3">
             <div className="flex items-center gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-950/50">
                 <Trophy className="size-5 text-amber-500" />
@@ -324,7 +324,7 @@ export default function PointsPage() {
 
         {/* Current Badge */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-3">
             <div className="flex items-center gap-3">
               <div
                 className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${
@@ -352,7 +352,7 @@ export default function PointsPage() {
 
         {/* Quiz Attempts */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-3">
             <div className="flex items-center gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/50">
                 <HelpCircle className="size-5 text-blue-500" />
@@ -367,7 +367,7 @@ export default function PointsPage() {
 
         {/* Perfect Scores */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-3">
             <div className="flex items-center gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-950/50">
                 <Target className="size-5 text-green-500" />

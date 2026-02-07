@@ -1,7 +1,8 @@
 "use client";
 
-import { BookOpen } from "lucide-react";
+import { BookOpen, LayoutDashboard } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import {
@@ -25,8 +26,34 @@ const navItems = [
   },
 ];
 
+const superadminItems = [
+  {
+    title: "Landing Page",
+    url: "/admin/landing-page",
+    icon: LayoutDashboard,
+  },
+];
+
 export function AdminSidebar() {
   const pathname = usePathname();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchRole() {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          setRole(data.user?.role ?? null);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    fetchRole();
+  }, []);
+
+  const isSuperadmin = role === "superadmin";
 
   return (
     <Sidebar collapsible="icon">
@@ -70,6 +97,29 @@ export function AdminSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isSuperadmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Site</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {superadminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname.startsWith(item.url)}
+                    >
+                      <Link href={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
