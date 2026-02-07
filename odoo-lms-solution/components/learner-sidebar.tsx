@@ -1,6 +1,12 @@
 "use client";
 
-import { BookOpen, GraduationCap, LogOut, Trophy } from "lucide-react";
+import {
+  BookOpen,
+  GraduationCap,
+  LogOut,
+  Trophy,
+  UserCircle,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
@@ -35,6 +41,11 @@ const navItems = [
     title: "My Points",
     url: "/dashboard/points",
     icon: Trophy,
+  },
+  {
+    title: "Profile",
+    url: "/dashboard/profile",
+    icon: UserCircle,
   },
 ];
 

@@ -5,6 +5,7 @@ import {
   BookOpen,
   LayoutDashboard,
   LogOut,
+  UserCircle,
   Users,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -36,6 +37,11 @@ const navItems = [
     title: "My Courses",
     url: "/admin/courses",
     icon: BookOpen,
+  },
+  {
+    title: "Profile",
+    url: "/admin/profile",
+    icon: UserCircle,
   },
 ];
 
