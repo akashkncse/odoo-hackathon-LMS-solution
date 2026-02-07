@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Award,
   BarChart3,
   BookOpen,
   CreditCard,
@@ -63,6 +64,11 @@ const superadminItems = [
     title: "Users",
     url: "/admin/users",
     icon: Users,
+  },
+  {
+    title: "Badge Levels",
+    url: "/admin/badge-levels",
+    icon: Award,
   },
   {
     title: "Site Settings",
