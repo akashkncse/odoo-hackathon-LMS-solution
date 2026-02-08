@@ -71,6 +71,10 @@ export async function GET(request: NextRequest) {
           totalQuizAttempts: 0,
           averageQuizScore: 0,
         },
+        trends: {
+          enrollments: [],
+          completions: [],
+        },
       });
     }
 
