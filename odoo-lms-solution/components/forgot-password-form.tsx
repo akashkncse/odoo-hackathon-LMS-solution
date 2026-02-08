@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-type Step = "details" | "otp";
+type Step = "email" | "otp" | "reset";
 
 interface PasswordCheck {
   label: string;
@@ -78,31 +78,28 @@ function PasswordStrengthIndicator({ password }: { password: string }) {
   );
 }
 
-export function SignupForm({
+export function ForgotPasswordForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [step, setStep] = useState<Step>("details");
+  const [step, setStep] = useState<Step>("email");
 
-  // Form fields
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   const isPasswordValid = useMemo(
-    () => PASSWORD_CHECKS.every((check) => check.test(password)),
-    [password],
+    () => PASSWORD_CHECKS.every((check) => check.test(newPassword)),
+    [newPassword],
   );
 
-  const passwordsMatch = password === confirmPassword;
+  const passwordsMatch = newPassword === confirmPassword;
 
-  // Start cooldown timer for resend
   function startResendCooldown() {
     setResendCooldown(60);
     const interval = setInterval(() => {
@@ -119,45 +116,28 @@ export function SignupForm({
   async function handleSendOtp() {
     setError("");
 
-    if (!name.trim()) {
-      setError("Full name is required.");
-      return;
-    }
     if (!email.trim()) {
       setError("Email is required.");
-      return;
-    }
-    if (!isPasswordValid) {
-      setError("Password does not meet all requirements.");
-      return;
-    }
-    if (!passwordsMatch) {
-      setError("Passwords do not match.");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/send-otp", {
+      const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          type: "signup",
-          name,
-          password,
-        }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Failed to send OTP.");
-        toast.error(data.error || "Failed to send OTP.");
+        setError(data.error || "Failed to send reset code.");
+        toast.error(data.error || "Failed to send reset code.");
         return;
       }
 
-      toast.success("Verification code sent! 📧", {
+      toast.success("Reset code sent! 📧", {
         description: "Check your email inbox.",
       });
       setStep("otp");
@@ -170,7 +150,7 @@ export function SignupForm({
     }
   }
 
-  async function handleVerifyAndSignup() {
+  async function handleVerifyOtp() {
     setError("");
 
     if (!otp.trim() || otp.trim().length !== 6) {
@@ -180,49 +160,73 @@ export function SignupForm({
 
     setLoading(true);
     try {
-      // Step 1: Verify the OTP
-      const verifyRes = await fetch("/api/auth/verify-otp", {
+      const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
           code: otp.trim(),
-          type: "signup",
+          type: "password_reset",
         }),
       });
 
-      const verifyData = await verifyRes.json();
+      const data = await res.json();
 
-      if (!verifyRes.ok) {
-        setError(verifyData.error || "Invalid verification code.");
-        toast.error(verifyData.error || "Invalid verification code.");
+      if (!res.ok) {
+        setError(data.error || "Invalid code.");
+        toast.error(data.error || "Invalid code.");
         return;
       }
 
-      // Step 2: Create the account
-      const signupRes = await fetch("/api/auth/signup", {
+      toast.success("Code verified! 🔓", {
+        description: "Now set your new password.",
+      });
+      setStep("reset");
+    } catch {
+      setError("Something went wrong. Try again.");
+      toast.error("Something went wrong. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResetPassword() {
+    setError("");
+
+    if (!isPasswordValid) {
+      setError("Password does not meet all requirements.");
+      return;
+    }
+
+    if (!passwordsMatch) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
           email,
-          password,
           otp: otp.trim(),
+          newPassword,
         }),
       });
 
-      const signupData = await signupRes.json();
+      const data = await res.json();
 
-      if (!signupRes.ok) {
-        setError(signupData.error || "Signup failed.");
-        toast.error(signupData.error || "Signup failed.");
+      if (!res.ok) {
+        setError(data.error || "Failed to reset password.");
+        toast.error(data.error || "Failed to reset password.");
         return;
       }
 
-      toast.success("Account created! 🎉", {
-        description: "Welcome to LearnSphere!",
+      toast.success("Password reset successfully! 🎉", {
+        description: "You can now log in with your new password.",
       });
-      window.location.href = "/dashboard";
+      window.location.href = "/login";
     } catch {
       setError("Something went wrong. Try again.");
       toast.error("Something went wrong. Try again.");
@@ -237,26 +241,22 @@ export function SignupForm({
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/send-otp", {
+      const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          type: "signup",
-          name,
-          password,
-        }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Failed to resend OTP.");
-        toast.error(data.error || "Failed to resend OTP.");
+        setError(data.error || "Failed to resend code.");
+        toast.error(data.error || "Failed to resend code.");
         return;
       }
 
       toast.success("New code sent! 📧");
+      setOtp("");
       startResendCooldown();
     } catch {
       setError("Something went wrong. Try again.");
@@ -265,22 +265,38 @@ export function SignupForm({
     }
   }
 
+  function getTitle() {
+    switch (step) {
+      case "email":
+        return "Forgot your password?";
+      case "otp":
+        return "Enter verification code";
+      case "reset":
+        return "Set new password";
+    }
+  }
+
+  function getDescription() {
+    switch (step) {
+      case "email":
+        return "Enter your email and we'll send you a code to reset your password.";
+      case "otp":
+        return `We've sent a 6-digit code to ${email}`;
+      case "reset":
+        return "Choose a strong new password for your account.";
+    }
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>
-            {step === "details" ? "Create an account" : "Verify your email"}
-          </CardTitle>
-          <CardDescription>
-            {step === "details"
-              ? "Enter your information below to create your account"
-              : `We've sent a 6-digit code to ${email}`}
-          </CardDescription>
+          <CardTitle>{getTitle()}</CardTitle>
+          <CardDescription>{getDescription()}</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* ── Step 1: Details ── */}
-          {step === "details" && (
+          {/* ── Step 1: Enter Email ── */}
+          {step === "email" && (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -294,17 +310,6 @@ export function SignupForm({
                   </div>
                 )}
                 <Field>
-                  <FieldLabel htmlFor="name">Full Name</FieldLabel>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </Field>
-                <Field>
                   <FieldLabel htmlFor="email">Email</FieldLabel>
                   <Input
                     id="email"
@@ -312,61 +317,31 @@ export function SignupForm({
                     placeholder="m@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
                     required
                   />
                   <FieldDescription>
-                    We&apos;ll send a verification code to this email.
+                    Enter the email address associated with your account.
                   </FieldDescription>
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <PasswordStrengthIndicator password={password} />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="confirm-password">
-                    Confirm Password
-                  </FieldLabel>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
-                  {confirmPassword && !passwordsMatch && (
-                    <p className="text-destructive text-xs mt-0.5">
-                      Passwords do not match.
-                    </p>
-                  )}
-                </Field>
-                <Field>
-                  <Button
-                    type="submit"
-                    disabled={loading || !isPasswordValid || !passwordsMatch}
-                  >
-                    {loading ? "Sending code..." : "Continue"}
+                  <Button type="submit" disabled={loading}>
+                    {loading ? "Sending code..." : "Send Reset Code"}
                   </Button>
-                  <FieldDescription className="px-6 text-center">
-                    Already have an account? <a href="/login">Sign in</a>
+                  <FieldDescription className="text-center">
+                    Remember your password? <a href="/login">Sign in</a>
                   </FieldDescription>
                 </Field>
               </FieldGroup>
             </form>
           )}
 
-          {/* ── Step 2: OTP Verification ── */}
+          {/* ── Step 2: Verify OTP ── */}
           {step === "otp" && (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                handleVerifyAndSignup();
+                handleVerifyOtp();
               }}
             >
               <FieldGroup>
@@ -400,7 +375,7 @@ export function SignupForm({
                 </Field>
                 <Field>
                   <Button type="submit" disabled={loading || otp.length !== 6}>
-                    {loading ? "Verifying..." : "Verify & Create Account"}
+                    {loading ? "Verifying..." : "Verify Code"}
                   </Button>
                 </Field>
                 <div className="flex items-center justify-between text-sm">
@@ -408,7 +383,7 @@ export function SignupForm({
                     type="button"
                     className="text-muted-foreground hover:text-foreground underline-offset-4 hover:underline transition-colors"
                     onClick={() => {
-                      setStep("details");
+                      setStep("email");
                       setOtp("");
                       setError("");
                     }}
@@ -431,6 +406,62 @@ export function SignupForm({
                       : "Resend code"}
                   </button>
                 </div>
+              </FieldGroup>
+            </form>
+          )}
+
+          {/* ── Step 3: Reset Password ── */}
+          {step === "reset" && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleResetPassword();
+              }}
+            >
+              <FieldGroup>
+                {error && (
+                  <div className="text-destructive text-sm text-center">
+                    {error}
+                  </div>
+                )}
+                <Field>
+                  <FieldLabel htmlFor="new-password">New Password</FieldLabel>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    autoComplete="new-password"
+                    required
+                  />
+                  <PasswordStrengthIndicator password={newPassword} />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="confirm-new-password">
+                    Confirm New Password
+                  </FieldLabel>
+                  <Input
+                    id="confirm-new-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
+                    required
+                  />
+                  {confirmPassword && !passwordsMatch && (
+                    <p className="text-destructive text-xs mt-0.5">
+                      Passwords do not match.
+                    </p>
+                  )}
+                </Field>
+                <Field>
+                  <Button
+                    type="submit"
+                    disabled={loading || !isPasswordValid || !passwordsMatch}
+                  >
+                    {loading ? "Resetting..." : "Reset Password"}
+                  </Button>
+                </Field>
               </FieldGroup>
             </form>
           )}

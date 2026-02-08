@@ -4,7 +4,7 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get("session_token")?.value;
   const { pathname } = request.nextUrl;
 
-  const publicRoutes = ["/login", "/signup", "/"];
+  const publicRoutes = ["/login", "/signup", "/", "/forgot-password"];
 
   if (publicRoutes.includes(pathname) || pathname.startsWith("/verify/")) {
     return NextResponse.next();

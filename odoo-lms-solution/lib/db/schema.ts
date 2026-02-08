@@ -33,6 +33,8 @@ export const paymentStatusEnum = pgEnum("payment_status", [
   "refunded",
 ]);
 
+export const otpTypeEnum = pgEnum("otp_type", ["signup", "password_reset"]);
+
 export const enrollmentStatusEnum = pgEnum("enrollment_status", [
   "not_started",
   "in_progress",
@@ -276,6 +278,17 @@ export const certificates = pgTable("certificates", {
     .notNull()
     .unique(),
   issuedAt: timestamp("issued_at").defaultNow().notNull(),
+});
+
+export const otpCodes = pgTable("otp_codes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  email: varchar("email", { length: 255 }).notNull(),
+  code: varchar("code", { length: 6 }).notNull(),
+  type: otpTypeEnum("type").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  verified: boolean("verified").notNull().default(false),
+  attempts: integer("attempts").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const siteSettings = pgTable("site_settings", {

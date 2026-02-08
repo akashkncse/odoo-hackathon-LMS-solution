@@ -1,31 +1,67 @@
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { users, otpCodes } from "@/lib/db/schema";
 import { hashPassword, createSession } from "@/lib/auth";
-import { eq } from "drizzle-orm";
+import { validatePassword } from "@/lib/validation";
+import { eq, and, desc } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password } = await request.json();
+    const { name, email, password, otp } = await request.json();
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !otp) {
       return NextResponse.json(
-        { error: "Name, email, and password are required" },
+        { error: "Name, email, password, and OTP are required" },
         { status: 400 },
       );
     }
 
-    if (password.length < 6) {
+    // Validate password strength
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.valid) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
+        { error: passwordCheck.errors[0], errors: passwordCheck.errors },
         { status: 400 },
       );
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Verify the OTP was validated
+    const [otpRecord] = await db
+      .select()
+      .from(otpCodes)
+      .where(
+        and(
+          eq(otpCodes.email, normalizedEmail),
+          eq(otpCodes.type, "signup"),
+          eq(otpCodes.code, otp),
+          eq(otpCodes.verified, true),
+        ),
+      )
+      .orderBy(desc(otpCodes.createdAt))
+      .limit(1);
+
+    if (!otpRecord) {
+      return NextResponse.json(
+        { error: "Invalid or unverified OTP. Please verify your email first." },
+        { status: 400 },
+      );
+    }
+
+    // Check if OTP has expired
+    if (otpRecord.expiresAt < new Date()) {
+      return NextResponse.json(
+        { error: "OTP has expired. Please request a new one." },
+        { status: 400 },
+      );
+    }
+
+    // Check if user already exists (race condition guard)
     const [existing] = await db
       .select({ id: users.id })
       .from(users)
-      .where(eq(users.email, email.toLowerCase()));
+      .where(eq(users.email, normalizedEmail));
 
     if (existing) {
       return NextResponse.json(
@@ -34,13 +70,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Create the user
     const passwordHash = await hashPassword(password);
 
     const [user] = await db
       .insert(users)
       .values({
         name,
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         passwordHash,
         role: "learner",
       })
@@ -51,6 +88,14 @@ export async function POST(request: Request) {
         role: users.role,
       });
 
+    // Clean up all signup OTPs for this email
+    await db
+      .delete(otpCodes)
+      .where(
+        and(eq(otpCodes.email, normalizedEmail), eq(otpCodes.type, "signup")),
+      );
+
+    // Create session and log the user in
     await createSession(user.id);
 
     return NextResponse.json({ user }, { status: 201 });
