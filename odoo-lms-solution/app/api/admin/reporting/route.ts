@@ -32,6 +32,8 @@ export async function GET(request: NextRequest) {
     const courseId = searchParams.get("courseId");
 
     // ── Per-course reporting with all stats ──────────────────────────────
+    const parsedCourseId = courseId ? Number(courseId) : null;
+
     const courseRows = await db
       .select({
         id: courses.id,
@@ -45,8 +47,8 @@ export async function GET(request: NextRequest) {
       })
       .from(courses)
       .where(
-        courseId
-          ? and(courseCondition, eq(courses.id, courseId))
+        parsedCourseId
+          ? and(courseCondition, eq(courses.id, parsedCourseId))
           : courseCondition,
       )
       .orderBy(desc(courses.createdAt));
@@ -88,7 +90,7 @@ export async function GET(request: NextRequest) {
         courseIds.length === 1
           ? eq(enrollments.courseId, courseIds[0])
           : sql`${enrollments.courseId} = ANY(${sql`ARRAY[${sql.join(
-              courseIds.map((id) => sql`${id}::uuid`),
+              courseIds.map((id) => sql`${id}::int`),
               sql`, `,
             )}]`})`,
       )
@@ -108,7 +110,7 @@ export async function GET(request: NextRequest) {
         courseIds.length === 1
           ? eq(lessons.courseId, courseIds[0])
           : sql`${lessons.courseId} = ANY(${sql`ARRAY[${sql.join(
-              courseIds.map((id) => sql`${id}::uuid`),
+              courseIds.map((id) => sql`${id}::int`),
               sql`, `,
             )}]`})`,
       )
@@ -131,7 +133,7 @@ export async function GET(request: NextRequest) {
         courseIds.length === 1
           ? eq(quizzes.courseId, courseIds[0])
           : sql`${quizzes.courseId} = ANY(${sql`ARRAY[${sql.join(
-              courseIds.map((id) => sql`${id}::uuid`),
+              courseIds.map((id) => sql`${id}::int`),
               sql`, `,
             )}]`})`,
       )
@@ -151,7 +153,7 @@ export async function GET(request: NextRequest) {
         courseIds.length === 1
           ? eq(reviews.courseId, courseIds[0])
           : sql`${reviews.courseId} = ANY(${sql`ARRAY[${sql.join(
-              courseIds.map((id) => sql`${id}::uuid`),
+              courseIds.map((id) => sql`${id}::int`),
               sql`, `,
             )}]`})`,
       )
@@ -174,7 +176,7 @@ export async function GET(request: NextRequest) {
         and(
           courseCondition,
           gte(enrollments.enrolledAt, thirtyDaysAgo),
-          courseId ? eq(enrollments.courseId, courseId) : sql`1=1`,
+          parsedCourseId ? eq(enrollments.courseId, parsedCourseId) : sql`1=1`,
         ),
       )
       .groupBy(sql`to_char(${enrollments.enrolledAt}, 'YYYY-MM-DD')`)
@@ -193,7 +195,7 @@ export async function GET(request: NextRequest) {
           courseCondition,
           gte(enrollments.completedAt!, thirtyDaysAgo),
           eq(enrollments.status, "completed"),
-          courseId ? eq(enrollments.courseId, courseId) : sql`1=1`,
+          parsedCourseId ? eq(enrollments.courseId, parsedCourseId) : sql`1=1`,
         ),
       )
       .groupBy(sql`to_char(${enrollments.completedAt}, 'YYYY-MM-DD')`)

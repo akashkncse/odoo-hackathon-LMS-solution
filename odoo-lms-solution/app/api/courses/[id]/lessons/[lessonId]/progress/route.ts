@@ -1,10 +1,5 @@
 import { db } from "@/lib/db";
-import {
-  courses,
-  lessons,
-  enrollments,
-  lessonProgress,
-} from "@/lib/db/schema";
+import { courses, lessons, enrollments, lessonProgress } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -23,7 +18,8 @@ export async function POST(
       );
     }
 
-    const { id: courseId, lessonId } = await params;
+    const { id, lessonId } = await params;
+    const courseId = Number(id);
 
     const body = await request.json();
     const { status } = body;
@@ -33,8 +29,7 @@ export async function POST(
     if (!status || !validStatuses.includes(status)) {
       return NextResponse.json(
         {
-          error:
-            "Status must be one of: not_started, in_progress, completed",
+          error: "Status must be one of: not_started, in_progress, completed",
         },
         { status: 400 },
       );
@@ -50,10 +45,7 @@ export async function POST(
       .where(eq(courses.id, courseId));
 
     if (!course || !course.published) {
-      return NextResponse.json(
-        { error: "Course not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
     // Verify the user is enrolled
@@ -81,15 +73,10 @@ export async function POST(
     const [lesson] = await db
       .select({ id: lessons.id })
       .from(lessons)
-      .where(
-        and(eq(lessons.id, lessonId), eq(lessons.courseId, courseId)),
-      );
+      .where(and(eq(lessons.id, lessonId), eq(lessons.courseId, courseId)));
 
     if (!lesson) {
-      return NextResponse.json(
-        { error: "Lesson not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
 
     // Check for existing progress record
@@ -191,9 +178,7 @@ export async function POST(
       const completedLessonIds = new Set(
         completedProgress.map((p) => p.lessonId),
       );
-      const allComplete = allLessons.every((l) =>
-        completedLessonIds.has(l.id),
-      );
+      const allComplete = allLessons.every((l) => completedLessonIds.has(l.id));
 
       if (allComplete) {
         await db

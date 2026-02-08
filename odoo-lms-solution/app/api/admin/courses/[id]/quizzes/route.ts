@@ -5,8 +5,8 @@ import { eq, asc } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 async function verifyCourseAccess(
-  courseId: string,
-  userId: string,
+  courseId: number,
+  userId: number,
   role: string,
 ) {
   const [course] = await db
@@ -38,7 +38,8 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: courseId } = await params;
+    const { id } = await params;
+    const courseId = Number(id);
 
     const course = await verifyCourseAccess(
       courseId,
@@ -81,7 +82,8 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: courseId } = await params;
+    const { id } = await params;
+    const courseId = Number(id);
 
     const course = await verifyCourseAccess(
       courseId,
@@ -104,10 +106,7 @@ export async function POST(
 
     // Validate title
     if (!title || typeof title !== "string" || title.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Title is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
     if (title.length > 255) {
@@ -127,7 +126,11 @@ export async function POST(
 
     for (const [key, value] of Object.entries(pointsFields)) {
       if (value !== undefined && value !== null) {
-        if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+        if (
+          typeof value !== "number" ||
+          !Number.isInteger(value) ||
+          value < 0
+        ) {
           return NextResponse.json(
             { error: `${key} must be a non-negative integer` },
             { status: 400 },

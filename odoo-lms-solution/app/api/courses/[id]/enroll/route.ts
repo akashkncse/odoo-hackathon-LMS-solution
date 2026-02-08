@@ -16,12 +16,13 @@ export async function POST(
     }
 
     const { id } = await params;
+    const courseId = Number(id);
 
     // Fetch the course
     const [course] = await db
       .select()
       .from(courses)
-      .where(eq(courses.id, id));
+      .where(eq(courses.id, courseId));
 
     if (!course || !course.published) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
@@ -33,7 +34,7 @@ export async function POST(
       .from(enrollments)
       .where(
         and(
-          eq(enrollments.courseId, id),
+          eq(enrollments.courseId, courseId),
           eq(enrollments.userId, session.user.id),
         ),
       );
@@ -59,7 +60,7 @@ export async function POST(
         .from(courseInvitations)
         .where(
           and(
-            eq(courseInvitations.courseId, id),
+            eq(courseInvitations.courseId, courseId),
             eq(courseInvitations.email, session.user.email),
             eq(courseInvitations.status, "pending"),
           ),
@@ -84,7 +85,7 @@ export async function POST(
       .insert(enrollments)
       .values({
         userId: session.user.id,
-        courseId: id,
+        courseId: courseId,
         status: "not_started",
       })
       .returning();

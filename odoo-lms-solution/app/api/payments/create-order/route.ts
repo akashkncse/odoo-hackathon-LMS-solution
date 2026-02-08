@@ -15,11 +15,20 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { courseId } = body;
+    const { courseId: rawCourseId } = body;
 
-    if (!courseId || typeof courseId !== "string") {
+    if (!rawCourseId) {
       return NextResponse.json(
         { error: "courseId is required" },
+        { status: 400 },
+      );
+    }
+
+    const courseId = Number(rawCourseId);
+
+    if (isNaN(courseId)) {
+      return NextResponse.json(
+        { error: "courseId must be a valid number" },
         { status: 400 },
       );
     }
@@ -136,8 +145,8 @@ export async function POST(request: Request) {
       currency: currency.toUpperCase(),
       receipt: `course_${courseId}_user_${session.user.id}_${Date.now()}`,
       notes: {
-        courseId,
-        userId: session.user.id,
+        courseId: String(courseId),
+        userId: String(session.user.id),
         courseTitle: course.title,
         userName: session.user.name,
         userEmail: session.user.email,

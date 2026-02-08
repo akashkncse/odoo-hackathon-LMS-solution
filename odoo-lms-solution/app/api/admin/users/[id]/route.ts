@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getSession();
@@ -18,11 +18,12 @@ export async function PATCH(
     if (session.user.role !== "superadmin") {
       return NextResponse.json(
         { error: "Forbidden: superadmin access required" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    const { id: targetUserId } = await params;
+    const { id } = await params;
+    const targetUserId = Number(id);
     const body = await request.json();
     const { role, isActive } = body;
 
@@ -46,7 +47,7 @@ export async function PATCH(
     if (targetUserId === session.user.id && role && role !== "superadmin") {
       return NextResponse.json(
         { error: "You cannot change your own role" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -54,7 +55,7 @@ export async function PATCH(
     if (targetUserId === session.user.id && isActive === false) {
       return NextResponse.json(
         { error: "You cannot deactivate your own account" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -68,7 +69,7 @@ export async function PATCH(
       if (!validRoles.includes(role)) {
         return NextResponse.json(
           { error: `Invalid role. Must be one of: ${validRoles.join(", ")}` },
-          { status: 400 }
+          { status: 400 },
         );
       }
       updateFields.role = role;
@@ -78,7 +79,7 @@ export async function PATCH(
       if (typeof isActive !== "boolean") {
         return NextResponse.json(
           { error: "isActive must be a boolean" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       updateFields.isActive = isActive;
@@ -109,14 +110,14 @@ export async function PATCH(
     console.error("Admin update user error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getSession();
@@ -128,11 +129,12 @@ export async function GET(
     if (session.user.role !== "superadmin") {
       return NextResponse.json(
         { error: "Forbidden: superadmin access required" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    const { id: targetUserId } = await params;
+    const { id } = await params;
+    const targetUserId = Number(id);
 
     const [user] = await db
       .select({
@@ -158,7 +160,7 @@ export async function GET(
     console.error("Admin get user error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

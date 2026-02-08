@@ -27,7 +27,8 @@ export async function POST(
       );
     }
 
-    const { id: courseId, quizId } = await params;
+    const { id, quizId } = await params;
+    const courseId = Number(id);
 
     // Verify the course exists and is published
     const [course] = await db

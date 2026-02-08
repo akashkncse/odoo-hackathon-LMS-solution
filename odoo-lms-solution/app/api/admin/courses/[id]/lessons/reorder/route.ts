@@ -5,8 +5,8 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 async function verifyCourseAccess(
-  courseId: string,
-  userId: string,
+  courseId: number,
+  userId: number,
   role: string,
 ) {
   const [course] = await db
@@ -38,7 +38,8 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: courseId } = await params;
+    const { id } = await params;
+    const courseId = Number(id);
 
     const course = await verifyCourseAccess(
       courseId,
@@ -78,10 +79,10 @@ export async function PATCH(
 
     const existingIds = new Set(existingLessons.map((l) => l.id));
 
-    for (const id of orderedIds) {
-      if (!existingIds.has(id)) {
+    for (const lessonId of orderedIds) {
+      if (!existingIds.has(lessonId)) {
         return NextResponse.json(
-          { error: `Lesson ID "${id}" does not belong to this course` },
+          { error: `Lesson ID "${lessonId}" does not belong to this course` },
           { status: 400 },
         );
       }

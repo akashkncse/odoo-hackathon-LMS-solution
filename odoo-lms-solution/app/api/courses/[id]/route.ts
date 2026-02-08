@@ -16,6 +16,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const courseId = Number(id);
     const session = await getSession();
 
     // Fetch the course
@@ -33,7 +34,7 @@ export async function GET(
         createdAt: courses.createdAt,
       })
       .from(courses)
-      .where(eq(courses.id, id));
+      .where(eq(courses.id, courseId));
 
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
@@ -62,7 +63,7 @@ export async function GET(
         sortOrder: lessons.sortOrder,
       })
       .from(lessons)
-      .where(eq(lessons.courseId, id))
+      .where(eq(lessons.courseId, courseId))
       .orderBy(lessons.sortOrder);
 
     // Check enrollment status if user is logged in
@@ -89,7 +90,7 @@ export async function GET(
         .from(enrollments)
         .where(
           and(
-            eq(enrollments.courseId, id),
+            eq(enrollments.courseId, courseId),
             eq(enrollments.userId, session.user.id),
           ),
         );
@@ -159,7 +160,7 @@ export async function GET(
         totalReviews: sql<number>`count(*)::int`,
       })
       .from(reviews)
-      .where(eq(reviews.courseId, id));
+      .where(eq(reviews.courseId, courseId));
 
     return NextResponse.json({
       course: {

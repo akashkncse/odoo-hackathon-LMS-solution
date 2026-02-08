@@ -1,10 +1,5 @@
 import { db } from "@/lib/db";
-import {
-  courses,
-  quizzes,
-  enrollments,
-  quizAttempts,
-} from "@/lib/db/schema";
+import { courses, quizzes, enrollments, quizAttempts } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { eq, and, desc } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -23,7 +18,8 @@ export async function GET(
       );
     }
 
-    const { id: courseId, quizId } = await params;
+    const { id, quizId } = await params;
+    const courseId = Number(id);
 
     // Verify the course exists and is published
     const [course] = await db
@@ -35,10 +31,7 @@ export async function GET(
       .where(eq(courses.id, courseId));
 
     if (!course || !course.published) {
-      return NextResponse.json(
-        { error: "Course not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
     // Verify the user is enrolled in this course
@@ -73,10 +66,7 @@ export async function GET(
       .where(and(eq(quizzes.id, quizId), eq(quizzes.courseId, courseId)));
 
     if (!quiz) {
-      return NextResponse.json(
-        { error: "Quiz not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
 
     // Fetch all attempts by this user for this quiz
@@ -100,9 +90,8 @@ export async function GET(
 
     // Compute summary stats
     const totalAttempts = attempts.length;
-    const bestScore = totalAttempts > 0
-      ? Math.max(...attempts.map((a) => a.score))
-      : 0;
+    const bestScore =
+      totalAttempts > 0 ? Math.max(...attempts.map((a) => a.score)) : 0;
     const totalPointsEarned = attempts.reduce(
       (sum, a) => sum + a.pointsEarned,
       0,

@@ -5,8 +5,8 @@ import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 async function verifyCourseAccess(
-  courseId: string,
-  userId: string,
+  courseId: number,
+  userId: number,
   role: string,
 ) {
   const [course] = await db
@@ -23,7 +23,7 @@ async function verifyCourseAccess(
   return course;
 }
 
-async function getLessonForCourse(courseId: string, lessonId: string) {
+async function getLessonForCourse(courseId: number, lessonId: string) {
   const [lesson] = await db
     .select()
     .from(lessons)
@@ -47,7 +47,8 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: courseId, lessonId } = await params;
+    const { id, lessonId } = await params;
+    const courseId = Number(id);
 
     const course = await verifyCourseAccess(
       courseId,
@@ -90,7 +91,8 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: courseId, lessonId } = await params;
+    const { id, lessonId } = await params;
+    const courseId = Number(id);
 
     const course = await verifyCourseAccess(
       courseId,
@@ -279,7 +281,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: courseId, lessonId } = await params;
+    const { id, lessonId } = await params;
+    const courseId = Number(id);
 
     const course = await verifyCourseAccess(
       courseId,

@@ -5,8 +5,8 @@ import { eq, asc, max } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 async function verifyCourseAccess(
-  courseId: string,
-  userId: string,
+  courseId: number,
+  userId: number,
   role: string,
 ) {
   const [course] = await db
@@ -38,7 +38,8 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: courseId } = await params;
+    const { id } = await params;
+    const courseId = Number(id);
 
     const course = await verifyCourseAccess(
       courseId,
@@ -81,7 +82,8 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: courseId } = await params;
+    const { id } = await params;
+    const courseId = Number(id);
 
     const course = await verifyCourseAccess(
       courseId,

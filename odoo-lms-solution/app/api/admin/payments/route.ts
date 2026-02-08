@@ -64,7 +64,7 @@ export async function GET(request: Request) {
     }
 
     if (courseId) {
-      conditions.push(eq(payments.courseId, courseId));
+      conditions.push(eq(payments.courseId, Number(courseId)));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

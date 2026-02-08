@@ -1,17 +1,12 @@
 import { db } from "@/lib/db";
-import {
-  courses,
-  quizzes,
-  quizQuestions,
-  quizOptions,
-} from "@/lib/db/schema";
+import { courses, quizzes, quizQuestions, quizOptions } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { eq, and, asc } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 async function verifyCourseAccess(
-  courseId: string,
-  userId: string,
+  courseId: number,
+  userId: number,
   role: string,
 ) {
   const [course] = await db
@@ -28,7 +23,7 @@ async function verifyCourseAccess(
   return course;
 }
 
-async function getQuizForCourse(courseId: string, quizId: string) {
+async function getQuizForCourse(courseId: number, quizId: string) {
   const [quiz] = await db
     .select()
     .from(quizzes)
@@ -42,10 +37,7 @@ async function getQuestionForQuiz(quizId: string, questionId: string) {
     .select()
     .from(quizQuestions)
     .where(
-      and(
-        eq(quizQuestions.id, questionId),
-        eq(quizQuestions.quizId, quizId),
-      ),
+      and(eq(quizQuestions.id, questionId), eq(quizQuestions.quizId, quizId)),
     );
 
   return question ?? null;
@@ -68,7 +60,8 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: courseId, quizId, questionId } = await params;
+    const { id, quizId, questionId } = await params;
+    const courseId = Number(id);
 
     const course = await verifyCourseAccess(
       courseId,
@@ -244,7 +237,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: courseId, quizId, questionId } = await params;
+    const { id, quizId, questionId } = await params;
+    const courseId = Number(id);
 
     const course = await verifyCourseAccess(
       courseId,
@@ -275,10 +269,7 @@ export async function DELETE(
     await db
       .delete(quizQuestions)
       .where(
-        and(
-          eq(quizQuestions.id, questionId),
-          eq(quizQuestions.quizId, quizId),
-        ),
+        and(eq(quizQuestions.id, questionId), eq(quizQuestions.quizId, quizId)),
       );
 
     return NextResponse.json({ message: "Question deleted" });

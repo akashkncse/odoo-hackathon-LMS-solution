@@ -7,9 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 // DELETE /api/admin/courses/[id]/invitations/[invitationId] — revoke an invitation
 export async function DELETE(
   _request: NextRequest,
-  {
-    params,
-  }: { params: Promise<{ id: string; invitationId: string }> },
+  { params }: { params: Promise<{ id: string; invitationId: string }> },
 ) {
   try {
     const session = await getSession();
@@ -22,7 +20,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: courseId, invitationId } = await params;
+    const { id, invitationId } = await params;
+    const courseId = Number(id);
 
     // Verify course exists and user has access
     const [course] = await db

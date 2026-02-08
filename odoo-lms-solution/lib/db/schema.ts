@@ -9,6 +9,7 @@ import {
   decimal,
   boolean,
   primaryKey,
+  serial,
 } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["superadmin", "instructor", "learner"]);
@@ -48,7 +49,7 @@ export const invitationStatusEnum = pgEnum("invitation_status", [
 ]);
 
 export const users = pgTable("users", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
@@ -62,7 +63,7 @@ export const users = pgTable("users", {
 
 export const sessions = pgTable("sessions", {
   id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
+  userId: integer("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   token: varchar("token", { length: 255 }).notNull().unique(),
@@ -71,7 +72,7 @@ export const sessions = pgTable("sessions", {
 });
 
 export const courses = pgTable("courses", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   imageUrl: varchar("image_url", { length: 500 }),
@@ -79,7 +80,7 @@ export const courses = pgTable("courses", {
   accessRule: accessRuleEnum("access_rule").notNull().default("open"),
   price: decimal("price", { precision: 10, scale: 2 }),
   published: boolean("published").notNull().default(false),
-  responsibleId: uuid("responsible_id")
+  responsibleId: integer("responsible_id")
     .notNull()
     .references(() => users.id),
   viewsCount: integer("views_count").notNull().default(0),
@@ -95,7 +96,7 @@ export const tags = pgTable("tags", {
 export const courseTags = pgTable(
   "course_tags",
   {
-    courseId: uuid("course_id")
+    courseId: integer("course_id")
       .notNull()
       .references(() => courses.id, { onDelete: "cascade" }),
     tagId: uuid("tag_id")
@@ -107,14 +108,14 @@ export const courseTags = pgTable(
 
 export const lessons = pgTable("lessons", {
   id: uuid("id").defaultRandom().primaryKey(),
-  courseId: uuid("course_id")
+  courseId: integer("course_id")
     .notNull()
     .references(() => courses.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 255 }).notNull(),
   type: lessonTypeEnum("type").notNull(),
   description: text("description"),
   sortOrder: integer("sort_order").notNull().default(0),
-  responsibleId: uuid("responsible_id").references(() => users.id),
+  responsibleId: integer("responsible_id").references(() => users.id),
   quizId: uuid("quiz_id").references(() => quizzes.id),
   videoUrl: varchar("video_url", { length: 500 }),
   videoDuration: integer("video_duration"),
@@ -138,7 +139,7 @@ export const lessonAttachments = pgTable("lesson_attachments", {
 
 export const quizzes = pgTable("quizzes", {
   id: uuid("id").defaultRandom().primaryKey(),
-  courseId: uuid("course_id")
+  courseId: integer("course_id")
     .notNull()
     .references(() => courses.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 255 }).notNull(),
@@ -169,12 +170,13 @@ export const quizOptions = pgTable("quiz_options", {
   isCorrect: boolean("is_correct").notNull().default(false),
   sortOrder: integer("sort_order").notNull().default(0),
 });
+
 export const enrollments = pgTable("enrollments", {
   id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
+  userId: integer("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  courseId: uuid("course_id")
+  courseId: integer("course_id")
     .notNull()
     .references(() => courses.id, { onDelete: "cascade" }),
   status: enrollmentStatusEnum("status").notNull().default("not_started"),
@@ -186,7 +188,7 @@ export const enrollments = pgTable("enrollments", {
 
 export const lessonProgress = pgTable("lesson_progress", {
   id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
+  userId: integer("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   lessonId: uuid("lesson_id")
@@ -199,7 +201,7 @@ export const lessonProgress = pgTable("lesson_progress", {
 
 export const quizAttempts = pgTable("quiz_attempts", {
   id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
+  userId: integer("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   quizId: uuid("quiz_id")
@@ -228,10 +230,10 @@ export const quizResponses = pgTable("quiz_responses", {
 
 export const reviews = pgTable("reviews", {
   id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
+  userId: integer("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  courseId: uuid("course_id")
+  courseId: integer("course_id")
     .notNull()
     .references(() => courses.id, { onDelete: "cascade" }),
   rating: integer("rating").notNull(),
@@ -241,11 +243,11 @@ export const reviews = pgTable("reviews", {
 
 export const courseInvitations = pgTable("course_invitations", {
   id: uuid("id").defaultRandom().primaryKey(),
-  courseId: uuid("course_id")
+  courseId: integer("course_id")
     .notNull()
     .references(() => courses.id, { onDelete: "cascade" }),
   email: varchar("email", { length: 255 }).notNull(),
-  invitedBy: uuid("invited_by")
+  invitedBy: integer("invited_by")
     .notNull()
     .references(() => users.id),
   status: invitationStatusEnum("status").notNull().default("pending"),
@@ -261,10 +263,10 @@ export const badgeLevels = pgTable("badge_levels", {
 
 export const certificates = pgTable("certificates", {
   id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
+  userId: integer("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  courseId: uuid("course_id")
+  courseId: integer("course_id")
     .notNull()
     .references(() => courses.id, { onDelete: "cascade" }),
   enrollmentId: uuid("enrollment_id")
@@ -290,7 +292,7 @@ export const discussionThreads = pgTable("discussion_threads", {
   id: uuid("id").defaultRandom().primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   body: text("body").notNull(),
-  authorId: uuid("author_id")
+  authorId: integer("author_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   isPinned: boolean("is_pinned").notNull().default(false),
@@ -304,7 +306,7 @@ export const discussionReplies = pgTable("discussion_replies", {
   threadId: uuid("thread_id")
     .notNull()
     .references(() => discussionThreads.id, { onDelete: "cascade" }),
-  authorId: uuid("author_id")
+  authorId: integer("author_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   body: text("body").notNull(),
@@ -314,10 +316,10 @@ export const discussionReplies = pgTable("discussion_replies", {
 
 export const payments = pgTable("payments", {
   id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
+  userId: integer("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  courseId: uuid("course_id")
+  courseId: integer("course_id")
     .notNull()
     .references(() => courses.id, { onDelete: "cascade" }),
   razorpayOrderId: varchar("razorpay_order_id", { length: 255 }).notNull(),

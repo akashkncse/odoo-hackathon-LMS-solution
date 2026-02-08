@@ -28,7 +28,8 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: courseId } = await params;
+    const { id } = await params;
+    const courseId = Number(id);
 
     // Find certificate for this user + course
     const [certificate] = await db
@@ -45,10 +46,7 @@ export async function GET(
       .from(certificates)
       .innerJoin(courses, eq(certificates.courseId, courses.id))
       .innerJoin(users, eq(certificates.userId, users.id))
-      .innerJoin(
-        enrollments,
-        eq(certificates.enrollmentId, enrollments.id),
-      )
+      .innerJoin(enrollments, eq(certificates.enrollmentId, enrollments.id))
       .where(
         and(
           eq(certificates.courseId, courseId),
@@ -95,7 +93,8 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: courseId } = await params;
+    const { id } = await params;
+    const courseId = Number(id);
 
     // Verify course exists
     const [course] = await db
@@ -104,10 +103,7 @@ export async function POST(
       .where(eq(courses.id, courseId));
 
     if (!course) {
-      return NextResponse.json(
-        { error: "Course not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
     // Verify user has completed the course
@@ -173,10 +169,7 @@ export async function POST(
         .from(certificates)
         .innerJoin(courses, eq(certificates.courseId, courses.id))
         .innerJoin(users, eq(certificates.userId, users.id))
-        .innerJoin(
-          enrollments,
-          eq(certificates.enrollmentId, enrollments.id),
-        )
+        .innerJoin(enrollments, eq(certificates.enrollmentId, enrollments.id))
         .where(eq(certificates.id, existingCert.id));
 
       const [lessonCount] = await db
@@ -239,10 +232,7 @@ export async function POST(
       .from(certificates)
       .innerJoin(courses, eq(certificates.courseId, courses.id))
       .innerJoin(users, eq(certificates.userId, users.id))
-      .innerJoin(
-        enrollments,
-        eq(certificates.enrollmentId, enrollments.id),
-      )
+      .innerJoin(enrollments, eq(certificates.enrollmentId, enrollments.id))
       .where(eq(certificates.id, newCert.id));
 
     const [lessonCount] = await db

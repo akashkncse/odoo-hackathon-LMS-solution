@@ -5,8 +5,8 @@ import { eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 async function getCourseForAdmin(
-  courseId: string,
-  userId: string,
+  courseId: number,
+  userId: number,
   role: string,
 ) {
   const [course] = await db
@@ -23,7 +23,7 @@ async function getCourseForAdmin(
   return course;
 }
 
-async function getCourseTagIds(courseId: string) {
+async function getCourseTagIds(courseId: number) {
   const rows = await db
     .select({
       tagId: courseTags.tagId,
@@ -36,7 +36,7 @@ async function getCourseTagIds(courseId: string) {
   return rows.map((r) => ({ id: r.tagId, name: r.tagName }));
 }
 
-async function syncCourseTags(courseId: string, tagIds: string[]) {
+async function syncCourseTags(courseId: number, tagIds: string[]) {
   // Delete existing associations
   await db.delete(courseTags).where(eq(courseTags.courseId, courseId));
 
@@ -77,9 +77,10 @@ export async function GET(
     }
 
     const { id } = await params;
+    const courseId = Number(id);
 
     const course = await getCourseForAdmin(
-      id,
+      courseId,
       session.user.id,
       session.user.role,
     );
@@ -88,7 +89,7 @@ export async function GET(
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    const courseTags = await getCourseTagIds(id);
+    const courseTags = await getCourseTagIds(courseId);
 
     return NextResponse.json({
       course: {
@@ -121,9 +122,10 @@ export async function PATCH(
     }
 
     const { id } = await params;
+    const courseId = Number(id);
 
     const existing = await getCourseForAdmin(
-      id,
+      courseId,
       session.user.id,
       session.user.role,
     );
@@ -239,7 +241,7 @@ export async function PATCH(
     if (Object.keys(updates).length > 0) {
       updates.updatedAt = new Date();
 
-      await db.update(courses).set(updates).where(eq(courses.id, id));
+      await db.update(courses).set(updates).where(eq(courses.id, courseId));
     }
 
     // Sync tags if provided
@@ -250,16 +252,16 @@ export async function PATCH(
           { status: 400 },
         );
       }
-      await syncCourseTags(id, tagIds);
+      await syncCourseTags(courseId, tagIds);
     }
 
     // Fetch the updated course with tags
     const [updatedCourse] = await db
       .select()
       .from(courses)
-      .where(eq(courses.id, id));
+      .where(eq(courses.id, courseId));
 
-    const updatedTags = await getCourseTagIds(id);
+    const updatedTags = await getCourseTagIds(courseId);
 
     return NextResponse.json({
       course: {
@@ -292,9 +294,10 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    const courseId = Number(id);
 
     const existing = await getCourseForAdmin(
-      id,
+      courseId,
       session.user.id,
       session.user.role,
     );
@@ -303,7 +306,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    await db.delete(courses).where(eq(courses.id, id));
+    await db.delete(courses).where(eq(courses.id, courseId));
 
     return NextResponse.json({ message: "Course deleted" });
   } catch (error) {

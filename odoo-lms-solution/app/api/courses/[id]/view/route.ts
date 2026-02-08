@@ -9,11 +9,12 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    const courseId = Number(id);
 
     const [course] = await db
       .select({ id: courses.id, viewsCount: courses.viewsCount })
       .from(courses)
-      .where(eq(courses.id, id));
+      .where(eq(courses.id, courseId));
 
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
@@ -22,7 +23,7 @@ export async function POST(
     await db
       .update(courses)
       .set({ viewsCount: course.viewsCount + 1 })
-      .where(eq(courses.id, id));
+      .where(eq(courses.id, courseId));
 
     return NextResponse.json({ viewsCount: course.viewsCount + 1 });
   } catch (error) {

@@ -10,7 +10,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id: courseId } = await params;
+    const { id } = await params;
+    const courseId = Number(id);
     const session = await getSession();
     const { searchParams } = new URL(request.url);
 
@@ -50,7 +51,13 @@ export async function GET(
       .where(eq(reviews.courseId, courseId))
       .groupBy(reviews.rating);
 
-    const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    const distribution: Record<number, number> = {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+    };
     for (const row of distributionRows) {
       distribution[row.rating] = row.count;
     }
@@ -132,7 +139,8 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: courseId } = await params;
+    const { id } = await params;
+    const courseId = Number(id);
 
     // Verify course exists
     const [course] = await db
@@ -166,7 +174,12 @@ export async function POST(
     const { rating, reviewText } = body;
 
     // Validate rating
-    if (typeof rating !== "number" || !Number.isInteger(rating) || rating < 1 || rating > 5) {
+    if (
+      typeof rating !== "number" ||
+      !Number.isInteger(rating) ||
+      rating < 1 ||
+      rating > 5
+    ) {
       return NextResponse.json(
         { error: "Rating must be an integer between 1 and 5." },
         { status: 400 },
@@ -174,7 +187,8 @@ export async function POST(
     }
 
     // Validate reviewText
-    const trimmedText = typeof reviewText === "string" ? reviewText.trim() : null;
+    const trimmedText =
+      typeof reviewText === "string" ? reviewText.trim() : null;
     if (trimmedText && trimmedText.length > 2000) {
       return NextResponse.json(
         { error: "Review text must be 2000 characters or less." },
@@ -256,7 +270,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: courseId } = await params;
+    const { id } = await params;
+    const courseId = Number(id);
 
     // Find the user's review for this course
     const [existingReview] = await db

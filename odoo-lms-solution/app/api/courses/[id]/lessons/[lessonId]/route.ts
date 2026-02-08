@@ -18,7 +18,8 @@ export async function GET(
       );
     }
 
-    const { id: courseId, lessonId } = await params;
+    const { id, lessonId } = await params;
+    const courseId = Number(id);
 
     // Fetch the course and verify it's published
     const [course] = await db
@@ -32,10 +33,7 @@ export async function GET(
       .where(eq(courses.id, courseId));
 
     if (!course || !course.published) {
-      return NextResponse.json(
-        { error: "Course not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
     // Check visibility
@@ -71,15 +69,10 @@ export async function GET(
     const [lesson] = await db
       .select()
       .from(lessons)
-      .where(
-        and(eq(lessons.id, lessonId), eq(lessons.courseId, courseId)),
-      );
+      .where(and(eq(lessons.id, lessonId), eq(lessons.courseId, courseId)));
 
     if (!lesson) {
-      return NextResponse.json(
-        { error: "Lesson not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
 
     // Fetch all lessons for this course (for navigation — prev/next)
@@ -158,7 +151,11 @@ export async function GET(
         id: course.id,
         title: course.title,
       },
-      progress: progress ?? { status: "not_started", startedAt: null, completedAt: null },
+      progress: progress ?? {
+        status: "not_started",
+        startedAt: null,
+        completedAt: null,
+      },
       navigation: {
         currentIndex,
         totalLessons: allLessons.length,

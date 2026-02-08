@@ -24,7 +24,8 @@ export async function GET(
       );
     }
 
-    const { id: courseId, quizId } = await params;
+    const { id, quizId } = await params;
+    const courseId = Number(id);
 
     // Verify the course exists and is published
     const [course] = await db
@@ -37,10 +38,7 @@ export async function GET(
       .where(eq(courses.id, courseId));
 
     if (!course || !course.published) {
-      return NextResponse.json(
-        { error: "Course not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
     // Verify the user is enrolled in this course
@@ -76,10 +74,7 @@ export async function GET(
       .where(and(eq(quizzes.id, quizId), eq(quizzes.courseId, courseId)));
 
     if (!quiz) {
-      return NextResponse.json(
-        { error: "Quiz not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
 
     // Fetch questions
