@@ -1,11 +1,17 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API);
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.SMTP_EMAIL,
+    pass: process.env.SMTP_PASSWORD,
+  },
+});
 
 export async function sendOtpEmail(
   email: string,
   otp: string,
-  type: "signup" | "password_reset"
+  type: "signup" | "password_reset",
 ) {
   const subject =
     type === "signup"
@@ -66,17 +72,20 @@ export async function sendOtpEmail(
     </html>
   `;
 
-  const { data, error } = await resend.emails.send({
-    from: "LearnSphere <onboarding@resend.dev>",
-    to: [email],
+  const mailOptions = {
+    from: `"LearnSphere" <${process.env.SMTP_EMAIL}>`,
+    to: email,
     subject,
     html,
-  });
+  };
 
-  if (error) {
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    return info;
+  } catch (error) {
     console.error("Failed to send OTP email:", error);
-    throw new Error(`Failed to send email: ${error.message}`);
+    throw new Error(
+      `Failed to send email: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
-
-  return data;
 }
