@@ -9,7 +9,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-const faqs = [
+export interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+const defaultFaqs: FAQItem[] = [
   {
     question: "Is the platform free to use?",
     answer:
@@ -52,9 +57,16 @@ const faqs = [
   },
 ];
 
-export function FAQ() {
+interface FAQProps {
+  faqs?: FAQItem[];
+}
+
+export function FAQ({ faqs }: FAQProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
+
+  // Use provided FAQs or fall back to defaults
+  const items = faqs && faqs.length > 0 ? faqs : defaultFaqs;
 
   return (
     <section id="faq" ref={sectionRef} className="relative py-20 sm:py-28">
@@ -94,7 +106,7 @@ export function FAQ() {
         >
           <div className="overflow-hidden rounded-2xl border border-border/50 bg-background shadow-sm">
             <Accordion type="single" collapsible className="w-full">
-              {faqs.map((faq, index) => (
+              {items.map((faq, index) => (
                 <AccordionItem
                   key={index}
                   value={`item-${index}`}

@@ -14,6 +14,10 @@ export async function GET() {
           heroImageUrl: null,
           featuredImageUrl: null,
           currency: "INR",
+          footerTagline: null,
+          footerLinks: null,
+          testimonials: null,
+          faqs: null,
         },
       });
     }
@@ -27,6 +31,10 @@ export async function GET() {
         heroImageUrl: settings.heroImageUrl,
         featuredImageUrl: settings.featuredImageUrl,
         currency: settings.currency || "INR",
+        footerTagline: settings.footerTagline || null,
+        footerLinks: settings.footerLinks || null,
+        testimonials: settings.testimonials || null,
+        faqs: settings.faqs || null,
       },
     });
   } catch (error) {

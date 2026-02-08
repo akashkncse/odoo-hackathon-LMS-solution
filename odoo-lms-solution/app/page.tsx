@@ -11,11 +11,34 @@ import { FAQ } from "@/components/landing/faq";
 import { CTA } from "@/components/landing/cta";
 import { Footer } from "@/components/landing/footer";
 
+interface Testimonial {
+  name: string;
+  role: string;
+  initials: string;
+  color: string;
+  rating: number;
+  text: string;
+}
+
+interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+interface FooterLinks {
+  platform: { label: string; href: string }[];
+  resources: { label: string; href: string }[];
+}
+
 interface SiteSettings {
   platformName: string | null;
   logoUrl: string | null;
   heroImageUrl: string | null;
   featuredImageUrl: string | null;
+  footerTagline: string | null;
+  footerLinks: FooterLinks | null;
+  testimonials: Testimonial[] | null;
+  faqs: FAQItem[] | null;
 }
 
 interface PlatformStats {
@@ -38,6 +61,10 @@ export default function Home() {
     logoUrl: null,
     heroImageUrl: null,
     featuredImageUrl: null,
+    footerTagline: null,
+    footerLinks: null,
+    testimonials: null,
+    faqs: null,
   });
   const [stats, setStats] = useState<PlatformStats>(defaultStats);
 
@@ -80,8 +107,8 @@ export default function Home() {
         <Stats stats={stats} />
         <Features />
         <HowItWorks />
-        <Testimonials />
-        <FAQ />
+        <Testimonials testimonials={settings.testimonials ?? undefined} />
+        <FAQ faqs={settings.faqs ?? undefined} />
         <CTA
           featuredImageUrl={settings.featuredImageUrl}
           platformName={settings.platformName ?? undefined}
@@ -90,6 +117,8 @@ export default function Home() {
       <Footer
         platformName={settings.platformName ?? undefined}
         logoUrl={settings.logoUrl}
+        tagline={settings.footerTagline ?? undefined}
+        links={settings.footerLinks ?? undefined}
       />
     </div>
   );

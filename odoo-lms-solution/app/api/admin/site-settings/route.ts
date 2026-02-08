@@ -27,6 +27,10 @@ export async function GET() {
           heroImageUrl: null,
           featuredImageUrl: null,
           currency: "INR",
+          footerTagline: null,
+          footerLinks: null,
+          testimonials: null,
+          faqs: null,
         },
       });
     }
@@ -54,8 +58,17 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { platformName, logoUrl, heroImageUrl, featuredImageUrl, currency } =
-      body;
+    const {
+      platformName,
+      logoUrl,
+      heroImageUrl,
+      featuredImageUrl,
+      currency,
+      footerTagline,
+      footerLinks,
+      testimonials,
+      faqs,
+    } = body;
 
     const updates: Record<string, unknown> = {};
 
@@ -142,6 +155,113 @@ export async function PATCH(request: Request) {
       updates.currency = currency?.trim().toUpperCase() || "INR";
     }
 
+    // Footer tagline
+    if (footerTagline !== undefined) {
+      if (footerTagline !== null && typeof footerTagline !== "string") {
+        return NextResponse.json(
+          { error: "footerTagline must be a string or null" },
+          { status: 400 },
+        );
+      }
+      if (typeof footerTagline === "string" && footerTagline.length > 500) {
+        return NextResponse.json(
+          { error: "footerTagline must be 500 characters or less" },
+          { status: 400 },
+        );
+      }
+      updates.footerTagline = footerTagline?.trim() || null;
+    }
+
+    // Footer links (JSON array)
+    if (footerLinks !== undefined) {
+      if (footerLinks !== null) {
+        if (typeof footerLinks !== "object") {
+          return NextResponse.json(
+            { error: "footerLinks must be an object or null" },
+            { status: 400 },
+          );
+        }
+        // Validate structure: { platform: [{label, href}], resources: [{label, href}] }
+        const { platform, resources } = footerLinks as {
+          platform?: { label: string; href: string }[];
+          resources?: { label: string; href: string }[];
+        };
+        if (platform && !Array.isArray(platform)) {
+          return NextResponse.json(
+            { error: "footerLinks.platform must be an array" },
+            { status: 400 },
+          );
+        }
+        if (resources && !Array.isArray(resources)) {
+          return NextResponse.json(
+            { error: "footerLinks.resources must be an array" },
+            { status: 400 },
+          );
+        }
+      }
+      updates.footerLinks = footerLinks;
+    }
+
+    // Testimonials (JSON array)
+    if (testimonials !== undefined) {
+      if (testimonials !== null) {
+        if (!Array.isArray(testimonials)) {
+          return NextResponse.json(
+            { error: "testimonials must be an array or null" },
+            { status: 400 },
+          );
+        }
+        if (testimonials.length > 20) {
+          return NextResponse.json(
+            { error: "Maximum 20 testimonials allowed" },
+            { status: 400 },
+          );
+        }
+        for (let i = 0; i < testimonials.length; i++) {
+          const t = testimonials[i];
+          if (!t.name || !t.text) {
+            return NextResponse.json(
+              {
+                error: `Testimonial #${i + 1} must have at least a name and text`,
+              },
+              { status: 400 },
+            );
+          }
+        }
+      }
+      updates.testimonials = testimonials;
+    }
+
+    // FAQs (JSON array)
+    if (faqs !== undefined) {
+      if (faqs !== null) {
+        if (!Array.isArray(faqs)) {
+          return NextResponse.json(
+            { error: "faqs must be an array or null" },
+            { status: 400 },
+          );
+        }
+        if (faqs.length > 30) {
+          return NextResponse.json(
+            { error: "Maximum 30 FAQs allowed" },
+            { status: 400 },
+          );
+        }
+        for (let i = 0; i < faqs.length; i++) {
+          const f = faqs[i];
+          if (!f.question || !f.answer) {
+            return NextResponse.json(
+              {
+                error: `FAQ #${i + 1} must have both a question and answer`,
+              },
+              { status: 400 },
+            );
+          }
+        }
+      }
+      updates.faqs = faqs;
+    }
+
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(
         { error: "No fields to update" },
@@ -166,6 +286,10 @@ export async function PATCH(request: Request) {
           heroImageUrl: (updates.heroImageUrl as string | null) ?? null,
           featuredImageUrl: (updates.featuredImageUrl as string | null) ?? null,
           currency: (updates.currency as string | null) ?? "INR",
+          footerTagline: (updates.footerTagline as string | null) ?? null,
+          footerLinks: updates.footerLinks ?? null,
+          testimonials: updates.testimonials ?? null,
+          faqs: updates.faqs ?? null,
           updatedAt: updates.updatedAt as Date,
         })
         .returning();

@@ -3,12 +3,24 @@
 import Link from "next/link";
 import { GraduationCap } from "lucide-react";
 
+interface FooterLink {
+  label: string;
+  href: string;
+}
+
+interface FooterLinksData {
+  platform: FooterLink[];
+  resources: FooterLink[];
+}
+
 interface FooterProps {
   platformName?: string;
   logoUrl?: string | null;
+  tagline?: string;
+  links?: FooterLinksData;
 }
 
-const footerLinks = {
+const defaultFooterLinks: FooterLinksData = {
   platform: [
     { label: "Browse Courses", href: "/dashboard/courses" },
     { label: "Leaderboard", href: "/dashboard/points" },
@@ -23,8 +35,33 @@ const footerLinks = {
   ],
 };
 
-export function Footer({ platformName = "LearnHub", logoUrl }: FooterProps) {
+const defaultTagline =
+  "A gamified learning platform that makes education fun and rewarding. Earn points, unlock badges, and climb the leaderboard as you learn.";
+
+export function Footer({
+  platformName = "LearnHub",
+  logoUrl,
+  tagline,
+  links,
+}: FooterProps) {
   const currentYear = new Date().getFullYear();
+
+  const footerTagline = tagline || defaultTagline;
+
+  const footerLinks: FooterLinksData = {
+    platform:
+      links?.platform && links.platform.length > 0
+        ? links.platform
+        : defaultFooterLinks.platform,
+    resources:
+      links?.resources && links.resources.length > 0
+        ? links.resources
+        : defaultFooterLinks.resources,
+  };
+
+  // Determine if a link is internal (starts with / or #) or external
+  const isInternalLink = (href: string) =>
+    href.startsWith("/") || href.startsWith("#");
 
   return (
     <footer className="border-t border-border/40 bg-muted/20">
@@ -52,9 +89,7 @@ export function Footer({ platformName = "LearnHub", logoUrl }: FooterProps) {
               </span>
             </Link>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              A gamified learning platform that makes education fun and
-              rewarding. Earn points, unlock badges, and climb the leaderboard
-              as you learn.
+              {footerTagline}
             </p>
 
             {/* Social proof mini */}
@@ -83,14 +118,34 @@ export function Footer({ platformName = "LearnHub", logoUrl }: FooterProps) {
               Platform
             </h3>
             <ul className="space-y-3">
-              {footerLinks.platform.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {link.label}
-                  </Link>
+              {footerLinks.platform.map((link, i) => (
+                <li key={`platform-${i}`}>
+                  {isInternalLink(link.href) ? (
+                    link.href.startsWith("#") ? (
+                      <a
+                        href={link.href}
+                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {link.label}
+                      </Link>
+                    )
+                  ) : (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
@@ -102,14 +157,34 @@ export function Footer({ platformName = "LearnHub", logoUrl }: FooterProps) {
               Resources
             </h3>
             <ul className="space-y-3">
-              {footerLinks.resources.map((link) => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {link.label}
-                  </a>
+              {footerLinks.resources.map((link, i) => (
+                <li key={`resources-${i}`}>
+                  {isInternalLink(link.href) ? (
+                    link.href.startsWith("#") ? (
+                      <a
+                        href={link.href}
+                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {link.label}
+                      </Link>
+                    )
+                  ) : (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

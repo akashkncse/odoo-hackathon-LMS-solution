@@ -10,6 +10,7 @@ import {
   boolean,
   primaryKey,
   serial,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["superadmin", "instructor", "learner"]);
@@ -298,6 +299,10 @@ export const siteSettings = pgTable("site_settings", {
   heroImageUrl: varchar("hero_image_url", { length: 500 }),
   featuredImageUrl: varchar("featured_image_url", { length: 500 }),
   currency: varchar("currency", { length: 10 }).default("INR"),
+  footerTagline: text("footer_tagline"),
+  footerLinks: jsonb("footer_links"),
+  testimonials: jsonb("testimonials"),
+  faqs: jsonb("faqs"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

@@ -3,12 +3,18 @@
 import { useRef } from "react";
 import { motion, useInView } from "motion/react";
 import { Star, Quote } from "lucide-react";
-import {
-  Avatar,
-  AvatarFallback,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const testimonials = [
+export interface TestimonialItem {
+  name: string;
+  role: string;
+  initials: string;
+  color: string;
+  rating: number;
+  text: string;
+}
+
+const defaultTestimonials: TestimonialItem[] = [
   {
     name: "Sarah Chen",
     role: "Software Developer",
@@ -59,6 +65,28 @@ const testimonials = [
   },
 ];
 
+const avatarColors = [
+  "bg-blue-500",
+  "bg-emerald-500",
+  "bg-purple-500",
+  "bg-amber-500",
+  "bg-rose-500",
+  "bg-cyan-500",
+  "bg-indigo-500",
+  "bg-teal-500",
+  "bg-orange-500",
+  "bg-pink-500",
+];
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 function StarRating({ rating }: { rating: number }) {
   return (
     <div className="flex items-center gap-0.5">
@@ -76,9 +104,24 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-export function Testimonials() {
+interface TestimonialsProps {
+  testimonials?: TestimonialItem[];
+}
+
+export function Testimonials({ testimonials }: TestimonialsProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
+
+  // Use provided testimonials or fall back to defaults
+  const items = (
+    testimonials && testimonials.length > 0 ? testimonials : defaultTestimonials
+  ).map((t, i) => ({
+    ...t,
+    // Auto-generate initials and color if not provided
+    initials: t.initials || getInitials(t.name),
+    color: t.color || avatarColors[i % avatarColors.length],
+    rating: t.rating ?? 5,
+  }));
 
   return (
     <section
@@ -112,9 +155,9 @@ export function Testimonials() {
 
         {/* Testimonials grid */}
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((testimonial, index) => (
+          {items.map((testimonial, index) => (
             <motion.div
-              key={testimonial.name}
+              key={`${testimonial.name}-${index}`}
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{
